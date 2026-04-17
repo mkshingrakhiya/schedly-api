@@ -1,0 +1,53 @@
+# `api` + `postgres` share the `backend` bridge (no static IPs). Use DB_HOST=postgres from the api container.
+# If you still see errors mentioning 172.28.x.x or `db`, remove old networks: `docker compose down` then prune
+# unused networks in Docker Desktop, and ensure you are in this project directory when you run compose.
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    # Host port defaults to 8080 (container still serves on 8000). Override with APP_PORT if 8080 is taken.
+    ports:
+      - "${APP_PORT:-8080}:8000"
+    env_file:
+      - .env
+    environment:
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_DATABASE: "${DB_DATABASE:-schedly}"
+      DB_USERNAME: "${DB_USERNAME:-schedly}"
+      DB_PASSWORD: "${DB_PASSWORD:-secret}"
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - backend
+
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    environment:
+      POSTGRES_DB: "${DB_DATABASE:-schedly}"
+      POSTGRES_USER: "${DB_USERNAME:-schedly}"
+      POSTGRES_PASSWORD: "${DB_PASSWORD:-secret}"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  postgres_data:
