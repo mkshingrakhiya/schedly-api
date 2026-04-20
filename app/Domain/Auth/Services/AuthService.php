@@ -4,6 +4,8 @@ namespace App\Domain\Auth\Services;
 
 use App\Domain\Auth\DTOs\LoginUserDataDTO;
 use App\Domain\Auth\DTOs\RegisterUserDataDTO;
+use App\Enums\RoleSlug;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 
@@ -16,10 +18,13 @@ class AuthService
     {
         $data = RegisterUserDataDTO::fromArray($validated);
 
+        $creatorRole = Role::findBySlugOrFail(RoleSlug::Creator);
+
         return User::create([
             'name' => $data->name,
             'email' => $data->email,
             'password' => $data->password,
+            'role_id' => $creatorRole->id,
         ]);
     }
 

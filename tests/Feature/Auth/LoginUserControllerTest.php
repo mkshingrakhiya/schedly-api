@@ -26,7 +26,14 @@ class LoginUserControllerTest extends TestCase
         $response
             ->assertOk()
             ->assertJsonStructure([
-                'user' => ['uuid', 'name', 'email', 'createdAt', 'updatedAt'],
+                'user' => [
+                    'uuid',
+                    'name',
+                    'email',
+                    'role' => ['uuid', 'slug', 'name', 'description'],
+                    'createdAt',
+                    'updatedAt',
+                ],
                 'token',
             ]);
 
@@ -34,6 +41,7 @@ class LoginUserControllerTest extends TestCase
 
         $this->assertTrue(Str::isUuid($response->json('user.uuid')));
         $this->assertSame($user->uuid, $response->json('user.uuid'));
+        $this->assertSame('creator', $response->json('user.role.slug'));
 
         $this->assertDatabaseHas('personal_access_tokens', [
             'tokenable_type' => $user::class,

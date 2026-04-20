@@ -21,6 +21,7 @@ class LoginUserController
             ], 422);
         }
 
+        $user->loadMissing('role');
         $token = $user->createToken('api')->plainTextToken;
 
         return response()->json([

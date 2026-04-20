@@ -1,0 +1,24 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Enums\RoleSlug;
+use App\Models\Role;
+use Illuminate\Database\Seeder;
+
+class RoleSeeder extends Seeder
+{
+    /**
+     * Run the database seeds.
+     */
+    public function run(): void
+    {
+        Role::query()->firstOrCreate(
+            ['slug' => RoleSlug::Creator->value],
+            [
+                'name' => 'Creator',
+                'description' => 'Creates and manages their own scheduled content.',
+            ]
+        );
+    }
+}
