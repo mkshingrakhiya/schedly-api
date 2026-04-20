@@ -6,13 +6,13 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Tests\TestCase;
 
-class RegisterTest extends TestCase
+class RegisterUserControllerTest extends TestCase
 {
     use LazilyRefreshDatabase;
 
     public function test_user_can_register_and_receives_token(): void
     {
-        $response = $this->postJson('/api/v1/register', [
+        $response = $this->postJson('/api/v1/auth/register', [
             'name' => 'Jane Doe',
             'email' => 'jane@example.com',
             'password' => 'password1234',
@@ -40,11 +40,13 @@ class RegisterTest extends TestCase
 
     public function test_registration_normalizes_name_and_email(): void
     {
-        $this->postJson('/api/v1/register', [
-            'name' => '   Jane    Doe   ',
-            'email' => '  JANE@EXAMPLE.COM  ',
-            'password' => 'password1234',
-        ])->assertCreated();
+        $this
+            ->postJson('/api/v1/auth/register', [
+                'name' => '   Jane    Doe   ',
+                'email' => '  JANE@EXAMPLE.COM  ',
+                'password' => 'password1234',
+            ])
+            ->assertCreated();
 
         $this->assertDatabaseHas('users', [
             'name' => 'Jane Doe',
@@ -58,13 +60,13 @@ class RegisterTest extends TestCase
             'email' => 'jane@example.com',
         ]);
 
-        $this->postJson('/api/v1/register', [
-            'name' => 'Jane Doe',
-            'email' => 'jane@example.com',
-            'password' => 'password1234',
-        ])
+        $this
+            ->postJson('/api/v1/auth/register', [
+                'name' => 'Jane Doe',
+                'email' => 'jane@example.com',
+                'password' => 'password1234',
+            ])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['email']);
     }
 }
-

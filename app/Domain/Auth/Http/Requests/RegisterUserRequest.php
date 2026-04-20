@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Http\Requests\Auth;
+namespace App\Domain\Auth\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Password;
 
-class RegisterRequest extends FormRequest
+class RegisterUserRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -32,4 +32,3 @@ class RegisterRequest extends FormRequest
         ];
     }
 }
-
