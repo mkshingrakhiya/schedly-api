@@ -1,7 +1,8 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use App\Domain\Auth\Http\Controllers\LoginUserController;
 use App\Domain\Auth\Http\Controllers\RegisterUserController;
+use Illuminate\Support\Facades\Route;
 
 // Quick ping/test route
 Route::get('/ping', fn () => ['message' => 'pong']);
@@ -12,5 +13,9 @@ Route::prefix('v1')->name('v1.')->group(function () {
         Route::post('/register', RegisterUserController::class)
             ->middleware('throttle:10,1')
             ->name('register');
+
+        Route::post('/login', LoginUserController::class)
+            ->middleware('throttle:5,1')
+            ->name('login');
     });
 });
