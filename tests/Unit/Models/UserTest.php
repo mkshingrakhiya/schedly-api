@@ -26,14 +26,13 @@ class UserTest extends TestCase
     {
         $otherRole = Role::factory()->create();
 
-        $user = new User;
-        $user->fill([
+        $user = new User([
             'name' => 'Test User',
             'email' => 'mass-assign-role@example.com',
             'password' => 'password1234',
             'role_id' => $otherRole->id,
         ]);
 
-        $this->assertArrayNotHasKey('role_id', $user->getAttributes());
+        $this->assertArrayNotHasKey('role_id', $user->getDirty());
     }
 }
