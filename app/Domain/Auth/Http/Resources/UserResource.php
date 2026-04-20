@@ -4,14 +4,9 @@ namespace App\Domain\Auth\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Carbon;
 
 /**
- * @property int $id
- * @property string $name
- * @property string $email
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @mixin \App\Models\User
  */
 class UserResource extends JsonResource
 {
@@ -21,7 +16,7 @@ class UserResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
+            'uuid' => $this->uuid,
             'name' => $this->name,
             'email' => $this->email,
             'createdAt' => $this->created_at?->toISOString(),

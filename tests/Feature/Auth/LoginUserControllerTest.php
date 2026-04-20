@@ -4,6 +4,7 @@ namespace Tests\Feature\Auth;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class LoginUserControllerTest extends TestCase
@@ -25,11 +26,14 @@ class LoginUserControllerTest extends TestCase
         $response
             ->assertOk()
             ->assertJsonStructure([
-                'user' => ['id', 'name', 'email', 'createdAt', 'updatedAt'],
+                'user' => ['uuid', 'name', 'email', 'createdAt', 'updatedAt'],
                 'token',
             ]);
 
         $user = User::query()->where('email', 'jane@example.com')->firstOrFail();
+
+        $this->assertTrue(Str::isUuid($response->json('user.uuid')));
+        $this->assertSame($user->uuid, $response->json('user.uuid'));
 
         $this->assertDatabaseHas('personal_access_tokens', [
             'tokenable_type' => $user::class,
