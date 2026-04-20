@@ -1,0 +1,61 @@
+diff --git a/app/Domain/Auth/Services/AuthService.php b/app/Domain/Auth/Services/AuthService.php
+index 4be0827..560eee8 100644
+--- a/app/Domain/Auth/Services/AuthService.php
++++ b/app/Domain/Auth/Services/AuthService.php
+@@ -2,8 +2,10 @@
+ 
+ namespace App\Domain\Auth\Services;
+ 
++use App\Domain\Auth\DTOs\LoginUserDataDTO;
+ use App\Domain\Auth\DTOs\RegisterUserDataDTO;
+ use App\Models\User;
++use Illuminate\Support\Facades\Auth;
+ 
+ class AuthService
+ {
+@@ -20,4 +22,23 @@ public function registerUser(array $validated): User
+             'password' => $data->password,
+         ]);
+     }
++
++    /**
++     * @param  array{email: string, password: string}  $validated
++     */
++    public function loginUser(array $validated): ?User
++    {
++        $data = LoginUserDataDTO::fromArray($validated);
++
++        if (! Auth::attempt([
++            'email' => $data->email,
++            'password' => $data->password,
++        ])) {
++            return null;
++        }
++
++        $user = Auth::user();
++
++        return $user instanceof User ? $user : null;
++    }
+ }
+diff --git a/routes/api.php b/routes/api.php
+index ad82c97..6602903 100644
+--- a/routes/api.php
++++ b/routes/api.php
+@@ -1,6 +1,7 @@
+ <?php
+ 
+ use Illuminate\Support\Facades\Route;
++use App\Domain\Auth\Http\Controllers\LoginUserController;
+ use App\Domain\Auth\Http\Controllers\RegisterUserController;
+ 
+ Route::get('/ping', fn () => ['message' => 'pong']);
+@@ -10,5 +11,9 @@
+         Route::post('/register', RegisterUserController::class)
+             ->middleware('throttle:10,1')
+             ->name('register');
++
++        Route::post('/login', LoginUserController::class)
++            ->middleware('throttle:5,1')
++            ->name('login');
+     });
+ });
