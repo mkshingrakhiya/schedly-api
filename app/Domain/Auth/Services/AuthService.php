@@ -20,12 +20,16 @@ class AuthService
 
         $creatorRole = Role::findBySlugOrFail(RoleSlug::Creator);
 
-        return User::create([
+        $user = new User([
             'name' => $data->name,
             'email' => $data->email,
             'password' => $data->password,
-            'role_id' => $creatorRole->id,
         ]);
+
+        $user->role()->associate($creatorRole);
+        $user->save();
+
+        return $user;
     }
 
     /**
