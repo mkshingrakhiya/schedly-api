@@ -24,7 +24,7 @@ class PostFactory extends Factory
             'workspace_id' => Workspace::factory(),
             'created_by' => User::factory(),
             'content' => fake()->paragraph(),
-            'status' => PostStatus::Draft,
+            'status' => PostStatus::Scheduled,
         ];
     }
 }

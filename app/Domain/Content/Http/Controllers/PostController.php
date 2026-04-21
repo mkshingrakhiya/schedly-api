@@ -9,18 +9,19 @@ use App\Domain\Content\Http\Requests\StorePostRequest;
 use App\Domain\Content\Http\Requests\UpdatePostRequest;
 use App\Domain\Content\Http\Resources\PostResource;
 use App\Domain\Content\Services\PostService;
+use App\Domain\Content\Models\Post;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 
 class PostController
 {
-    public function __construct(private PostService $posts)
+    public function __construct(private PostService $postService)
     {
     }
 
     public function index(IndexPostsRequest $request): JsonResponse
     {
-        $posts = $this->posts->paginateForWorkspace(
+        $posts = $this->postService->index(
             $request->workspace(),
             $request->integer('per_page', 15),
         );
@@ -30,7 +31,7 @@ class PostController
 
     public function store(StorePostRequest $request): JsonResponse
     {
-        $post = $this->posts->create(
+        $post = $this->postService->create(
             $request->workspace(),
             $request->user(),
             $request->validated(),
@@ -39,28 +40,27 @@ class PostController
         return PostResource::make($post)->response()->setStatusCode(201);
     }
 
-    public function show(ShowPostRequest $request, string $postUuid): JsonResponse
+    public function show(ShowPostRequest $request, Post $post): JsonResponse
     {
-        $post = $this->posts->get($request->workspace(), $postUuid);
+        $post = $this->postService->get($request->workspace(), $post);
 
         return PostResource::make($post)->response();
     }
 
-    public function update(UpdatePostRequest $request, string $postUuid): JsonResponse
+    public function update(UpdatePostRequest $request, Post $post): JsonResponse
     {
-        $workspace = $request->workspace();
-        $post = $this->posts->update(
-            $this->posts->get($workspace, $postUuid),
-            $workspace,
+        $post = $this->postService->update(
+            $post,
+            $request->workspace(),
             $request->validated(),
         );
 
         return PostResource::make($post)->response();
     }
 
-    public function destroy(DestroyPostRequest $request, string $postUuid): Response
+    public function destroy(DestroyPostRequest $request, Post $post): Response
     {
-        $this->posts->delete($this->posts->get($request->workspace(), $postUuid));
+        $this->postService->delete($post, $request->workspace());
 
         return response()->noContent();
     }

@@ -2,20 +2,19 @@
 
 namespace App\Domain\Content\Http\Requests;
 
+use App\Domain\Content\Models\Post;
 use App\Http\Requests\Api\V1FormRequest;
-use App\Models\Post;
 
 class DestroyPostRequest extends V1FormRequest
 {
     public function authorize(): bool
     {
-        $workspace = $this->workspace();
-        $post = Post::query()
-            ->where('uuid', $this->route('postUuid'))
-            ->where('workspace_id', $workspace->id)
-            ->first();
+        $post = $this->route('post');
+        if (! $post instanceof Post) {
+            return false;
+        }
 
-        if ($post === null) {
+        if ($post->workspace_id !== $this->workspace()->id) {
             abort(404);
         }
 

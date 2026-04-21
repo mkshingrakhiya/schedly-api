@@ -20,21 +20,8 @@ Route::prefix('v1')->name('v1.')->group(function () {
             ->name('login');
     });
 
-    Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
-        Route::get('posts', [PostController::class, 'index'])->name('posts.index');
-        
-        Route::post('posts', [PostController::class, 'store'])->name('posts.store');
-
-        Route::get('posts/{postUuid}', [PostController::class, 'show'])
-            ->whereUuid('postUuid')
-            ->name('posts.show');
-
-        Route::patch('posts/{postUuid}', [PostController::class, 'update'])
-            ->whereUuid('postUuid')
-            ->name('posts.update');
-
-        Route::delete('posts/{postUuid}', [PostController::class, 'destroy'])
-            ->whereUuid('postUuid')
-            ->name('posts.destroy');
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::apiResource('posts', PostController::class)
+            ->parameters(['posts' => 'post']);
     });
 });

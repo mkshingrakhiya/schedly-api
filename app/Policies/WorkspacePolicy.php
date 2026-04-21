@@ -2,7 +2,7 @@
 
 namespace App\Policies;
 
-use App\Domain\Workspaces\Enums\WorkspaceMemberRole;
+use App\Enums\WorkspaceMemberRole;
 use App\Models\User;
 use App\Models\Workspace;
 

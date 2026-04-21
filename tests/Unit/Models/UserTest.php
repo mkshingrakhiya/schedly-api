@@ -33,6 +33,6 @@ class UserTest extends TestCase
             'role_id' => $otherRole->id,
         ]);
 
-        $this->assertArrayNotHasKey('role_id', $user->getDirty());
+        $this->assertArrayNotHasKey('role_id', $user->getAttributes());
     }
 }

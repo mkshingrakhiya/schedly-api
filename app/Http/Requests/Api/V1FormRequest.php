@@ -11,9 +11,7 @@ use Illuminate\Foundation\Http\FormRequest;
  * via the {@see WorkspaceHeader::HEADER_NAME} header.
  */
 abstract class V1FormRequest extends FormRequest
-{
-    public const WORKSPACE_HEADER = WorkspaceHeader::HEADER_NAME;
-
+{   
     private ?Workspace $resolvedWorkspace = null;
 
     public function workspace(): Workspace

@@ -3,6 +3,7 @@
 namespace Tests\Feature\Auth;
 
 use App\Models\User;
+use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -13,7 +14,7 @@ class LoginUserControllerTest extends TestCase
 
     public function test_user_can_login_and_receives_token(): void
     {
-        User::factory()->create([
+        UserFactory::new()->create([
             'email' => 'jane@example.com',
             'password' => 'password1234',
         ]);

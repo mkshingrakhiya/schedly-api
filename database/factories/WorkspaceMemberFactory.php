@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Domain\Workspaces\Enums\WorkspaceMemberRole;
+use App\Enums\WorkspaceMemberRole;
 use App\Models\User;
 use App\Models\Workspace;
 use App\Models\WorkspaceMember;

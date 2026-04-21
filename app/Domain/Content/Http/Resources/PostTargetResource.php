@@ -2,11 +2,12 @@
 
 namespace App\Domain\Content\Http\Resources;
 
+use App\Domain\Content\Models\PostTarget;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin \App\Models\PostTarget
+ * @mixin PostTarget
  */
 class PostTargetResource extends JsonResource
 {

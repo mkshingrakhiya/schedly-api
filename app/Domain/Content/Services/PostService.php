@@ -4,9 +4,9 @@ namespace App\Domain\Content\Services;
 
 use App\Domain\Content\Enums\PostStatus;
 use App\Domain\Content\Enums\PostTargetStatus;
-use App\Models\Channel;
-use App\Models\Post;
-use App\Models\PostTarget;
+use App\Domain\Content\Models\Channel;
+use App\Domain\Content\Models\Post;
+use App\Domain\Content\Models\PostTarget;
 use App\Models\User;
 use App\Models\Workspace;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -16,71 +16,70 @@ use Illuminate\Validation\ValidationException;
 
 class PostService
 {
-    public function get(Workspace $workspace, string $postUuid): Post
-    {
-        return Post::query()
-            ->where('uuid', $postUuid)
-            ->where('workspace_id', $workspace->id)
-            ->with(['postTargets.channel.platform'])
-            ->firstOrFail();
-    }
-
-    /**
-     * @return LengthAwarePaginator<int, Post>
-     */
-    public function paginateForWorkspace(Workspace $workspace, int $perPage = 15): LengthAwarePaginator
+    public function index(Workspace $workspace, int $perPage = 15): LengthAwarePaginator
     {
         return Post::query()
             ->where('workspace_id', $workspace->id)
-            ->with(['postTargets.channel.platform'])
+            ->with(['creator', 'targets.channel'])
             ->latest('id')
             ->paginate($perPage);
     }
 
     /**
-     * @param  array{content: string, status: string, targets: list<array{channel_uuid: string, scheduled_at: string, platform_options?: array<string, mixed>|null}>}  $data
+     * @param  array<string, mixed>  $attributes
      */
-    public function create(Workspace $workspace, User $user, array $data): Post
+    public function create(Workspace $workspace, User $creator, array $attributes): Post
     {
-        return DB::transaction(function () use ($workspace, $user, $data): Post {
+        return DB::transaction(function () use ($workspace, $creator, $attributes): Post {
             $post = Post::query()->create([
                 'workspace_id' => $workspace->id,
-                'created_by' => $user->id,
-                'content' => $data['content'],
-                'status' => $data['status'],
+                'created_by' => $creator->id,
+                'content' => $attributes['content'],
+                'status' => $attributes['status'] ?? PostStatus::Scheduled,
             ]);
 
-            $this->replaceTargets($post, $workspace, $data['targets']);
+            if (! empty($attributes['targets'])) {
+                $this->replaceTargets($post, $workspace, $attributes['targets']);
+            }
 
-            return $post->fresh()->load(['postTargets.channel.platform']);
+            return $post->fresh()->load(['creator', 'targets.channel']);
         });
     }
 
-    /**
-     * @param  array{content?: string, status?: string, targets?: list<array{channel_uuid: string, scheduled_at: string, platform_options?: array<string, mixed>|null}>}  $data
-     */
-    public function update(Post $post, Workspace $workspace, array $data): Post
+    public function get(Workspace $workspace, Post $post): Post
     {
-        return DB::transaction(function () use ($post, $workspace, $data): Post {
-            if (array_key_exists('content', $data)) {
-                $post->content = $data['content'];
+        return Post::query()
+            ->where('workspace_id', $workspace->id)
+            ->where('id', $post->id)
+            ->with(['creator', 'targets.channel'])
+            ->firstOrFail();
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
+    public function update(Post $post, Workspace $workspace, array $attributes): Post
+    {
+        return DB::transaction(function () use ($post, $workspace, $attributes): Post {
+            if (array_key_exists('content', $attributes)) {
+                $post->content = $attributes['content'];
             }
 
-            if (array_key_exists('status', $data)) {
-                $post->status = PostStatus::from($data['status']);
+            if (array_key_exists('status', $attributes)) {
+                $post->status = $attributes['status'];
             }
 
             $post->save();
 
-            if (array_key_exists('targets', $data) && is_array($data['targets'])) {
-                $this->replaceTargets($post, $workspace, $data['targets']);
+            if (array_key_exists('targets', $attributes) && ! empty($attributes['targets'])) {
+                $this->replaceTargets($post, $workspace, $attributes['targets']);
             }
 
-            return $post->fresh()->load(['postTargets.channel.platform']);
+            return $post->fresh()->load(['creator', 'targets.channel']);
         });
     }
 
-    public function delete(Post $post): void
+    public function delete(Post $post, Workspace $workspace): void
     {
         $post->delete();
     }
@@ -90,7 +89,7 @@ class PostService
      */
     private function replaceTargets(Post $post, Workspace $workspace, array $targets): void
     {
-        $post->postTargets()->delete();
+        $post->targets()->delete();
 
         foreach ($targets as $target) {
             $channelUuid = Arr::get($target, 'channel_uuid');
@@ -98,8 +97,9 @@ class PostService
 
             if (! is_string($channelUuid) || ! is_string($scheduledAt)) {
                 throw ValidationException::withMessages([
-                    'targets' => ['Each target must include channel_uuid and scheduled_at.'],
+                    "targets.$channelUuid" => ['Each target must include a valid channel_uuid and scheduled_at.'],
                 ]);
+           
             }
 
             $channel = Channel::query()

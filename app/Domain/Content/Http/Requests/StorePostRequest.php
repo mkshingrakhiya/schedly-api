@@ -14,26 +14,39 @@ class StorePostRequest extends V1FormRequest
     }
 
     /**
-     * @return array<string, mixed>
+     * @return array<string, array<int, mixed>>
      */
     public function rules(): array
     {
-        $workspace = $this->workspace();
+        $workspaceId = $this->workspace()->id;
 
         return [
             'content' => ['required', 'string'],
-            'status' => ['required', Rule::enum(PostStatus::class)],
-            'targets' => ['required', 'array', 'min:1'],
+            'status' => ['nullable', Rule::enum(PostStatus::class)],
+            'targets' => ['sometimes', 'array'],
             'targets.*.channel_uuid' => [
                 'required',
                 'uuid',
-                'distinct',
-                Rule::exists('channels', 'uuid')
-                    ->where('workspace_id', $workspace->id)
-                    ->whereNull('deleted_at'),
+                Rule::exists('channels', 'uuid')->where('workspace_id', $workspaceId),
             ],
             'targets.*.scheduled_at' => ['required', 'date'],
+            'targets.*.published_at' => ['nullable', 'date'],
             'targets.*.platform_options' => ['nullable', 'array'],
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function validatedPayload(): array
+    {
+        /** @var array<string, mixed> $validated */
+        $validated = $this->validated();
+
+        return [
+            'content' => $validated['content'],
+            'status' => $validated['status'] ?? null,
+            'targets' => $validated['targets'] ?? [],
         ];
     }
 }

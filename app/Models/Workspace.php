@@ -4,7 +4,7 @@ namespace App\Models;
 
 use App\Domain\Content\Models\Channel;
 use App\Domain\Content\Models\Post;
-use App\Domain\Workspaces\Enums\WorkspaceMemberRole;
+use App\Enums\WorkspaceMemberRole;
 use App\Models\Concerns\HasUuid;
 use Database\Factories\WorkspaceFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;

@@ -2,11 +2,12 @@
 
 namespace App\Domain\Content\Http\Resources;
 
+use App\Domain\Content\Models\Post;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin \App\Models\Post
+ * @mixin Post
  */
 class PostResource extends JsonResource
 {
@@ -18,7 +19,7 @@ class PostResource extends JsonResource
         return [
             'uuid' => $this->uuid,
             'content' => $this->content,
-            'targets' => PostTargetResource::collection($this->whenLoaded('postTargets')),
+            'targets' => PostTargetResource::collection($this->whenLoaded('targets')),
             'status' => $this->status->value,
             'createdAt' => $this->created_at?->toISOString(),
             'updatedAt' => $this->updated_at?->toISOString(),
