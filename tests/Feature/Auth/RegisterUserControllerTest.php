@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Enums\RoleSlug;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Str;
@@ -22,7 +24,14 @@ class RegisterUserControllerTest extends TestCase
         $response
             ->assertCreated()
             ->assertJsonStructure([
-                'user' => ['uuid', 'name', 'email', 'createdAt', 'updatedAt'],
+                'user' => [
+                    'uuid',
+                    'name',
+                    'email',
+                    'role' => ['uuid', 'slug', 'name', 'description'],
+                    'createdAt',
+                    'updatedAt',
+                ],
                 'token',
             ]);
 
@@ -30,9 +39,13 @@ class RegisterUserControllerTest extends TestCase
 
         $this->assertTrue(Str::isUuid($response->json('user.uuid')));
         $this->assertSame($user->uuid, $response->json('user.uuid'));
+        $this->assertSame('creator', $response->json('user.role.slug'));
+        $creatorRoleId = Role::findBySlugOrFail(RoleSlug::Creator)->id;
+        $this->assertSame($creatorRoleId, $user->role_id);
         $this->assertDatabaseHas('users', [
             'email' => 'jane@example.com',
             'uuid' => $user->uuid,
+            'role_id' => $creatorRoleId,
         ]);
 
         $this->assertDatabaseHas('personal_access_tokens', [

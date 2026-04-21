@@ -6,9 +6,9 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin \App\Models\User
+ * @mixin \App\Models\Role
  */
-class UserResource extends JsonResource
+class RoleResource extends JsonResource
 {
     /**
      * @return array<string, mixed>
@@ -17,11 +17,9 @@ class UserResource extends JsonResource
     {
         return [
             'uuid' => $this->uuid,
+            'slug' => $this->slug,
             'name' => $this->name,
-            'email' => $this->email,
-            'role' => RoleResource::make($this->whenLoaded('role')),
-            'createdAt' => $this->created_at?->toISOString(),
-            'updatedAt' => $this->updated_at?->toISOString(),
+            'description' => $this->description,
         ];
     }
 }
