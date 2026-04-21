@@ -18,7 +18,7 @@ class AuthService
     {
         $data = RegisterUserDataDTO::fromArray($validated);
 
-        $creatorRole = Role::findBySlugOrFail(RoleSlug::Creator);
+        $creatorRole = Role::findBySlugOrFail(RoleSlug::CUSTOMER);
 
         $user = new User([
             'name' => $data->name,

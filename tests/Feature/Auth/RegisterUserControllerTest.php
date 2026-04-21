@@ -39,8 +39,8 @@ class RegisterUserControllerTest extends TestCase
 
         $this->assertTrue(Str::isUuid($response->json('user.uuid')));
         $this->assertSame($user->uuid, $response->json('user.uuid'));
-        $this->assertSame('creator', $response->json('user.role.slug'));
-        $creatorRoleId = Role::findBySlugOrFail(RoleSlug::Creator)->id;
+        $this->assertSame('customer', $response->json('user.role.slug'));
+        $creatorRoleId = Role::findBySlugOrFail(RoleSlug::CUSTOMER)->id;
         $this->assertSame($creatorRoleId, $user->role_id);
         $this->assertDatabaseHas('users', [
             'email' => 'jane@example.com',
