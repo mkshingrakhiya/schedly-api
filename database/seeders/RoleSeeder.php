@@ -14,9 +14,9 @@ class RoleSeeder extends Seeder
     public function run(): void
     {
         Role::query()->firstOrCreate(
-            ['slug' => RoleSlug::Creator->value],
+            ['slug' => RoleSlug::CUSTOMER->value],
             [
-                'name' => 'Creator',
+                'name' => 'Customer',
                 'description' => 'Creates and manages their own scheduled content.',
             ]
         );

@@ -32,8 +32,8 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
-            'role_id' => fn () => Role::findBySlugOrFail(RoleSlug::Creator)->id,
-        ];
+            'role_id' => fn () => Role::findBySlugOrFail(RoleSlug::CUSTOMER)->id,
+        ];  
     }
 
     /**
@@ -46,7 +46,7 @@ class UserFactory extends Factory
                 return;
             }
 
-            $user->role()->associate(Role::findBySlugOrFail(RoleSlug::Creator));
+            $user->role()->associate(Role::findBySlugOrFail(RoleSlug::CUSTOMER));
         });
     }
 
