@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int $created_by
  * @property string $content
  * @property PostStatus $status
+ * @property Workspace $workspace
  */
 class Post extends Model
 {

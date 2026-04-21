@@ -4,7 +4,7 @@ namespace App\Domain\Content\Http\Requests;
 
 use App\Http\Requests\Api\V1FormRequest;
 
-class ListPostsRequest extends V1FormRequest
+class IndexPostsRequest extends V1FormRequest
 {
     public function authorize(): bool
     {
@@ -12,10 +12,12 @@ class ListPostsRequest extends V1FormRequest
     }
 
     /**
-     * @return array<string, array<int, mixed>>
+     * @return array<string, mixed>
      */
     public function rules(): array
     {
-        return [];
+        return [
+            'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
+        ];
     }
 }

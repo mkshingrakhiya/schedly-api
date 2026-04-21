@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Domain\Workspaces\Enums;
+namespace App\Enums;
 
 enum WorkspaceMemberRole: string
 {

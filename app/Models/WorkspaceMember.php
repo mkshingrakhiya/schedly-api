@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Domain\Workspaces\Enums\WorkspaceMemberRole;
+use App\Enums\WorkspaceMemberRole;
 use Database\Factories\WorkspaceMemberFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

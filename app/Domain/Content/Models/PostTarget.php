@@ -8,6 +8,7 @@ use Database\Factories\PostTargetFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -15,8 +16,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $post_id
  * @property int $channel_id
  * @property PostTargetStatus $status
- * @property \Illuminate\Support\Carbon $scheduled_at
- * @property \Illuminate\Support\Carbon|null $published_at
+ * @property Carbon $scheduled_at
+ * @property Carbon|null $published_at
  * @property array<string, mixed>|null $platform_options
  */
 class PostTarget extends Model

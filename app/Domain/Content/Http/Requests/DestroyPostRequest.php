@@ -22,7 +22,7 @@ class DestroyPostRequest extends V1FormRequest
     }
 
     /**
-     * @return array<string, array<int, mixed>>
+     * @return array<string, mixed>
      */
     public function rules(): array
     {

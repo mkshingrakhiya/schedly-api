@@ -3,7 +3,7 @@
 namespace App\Policies;
 
 use App\Domain\Content\Models\Post;
-use App\Domain\Workspaces\Enums\WorkspaceMemberRole;
+use App\Enums\WorkspaceMemberRole;
 use App\Models\User;
 
 class PostPolicy
@@ -20,6 +20,6 @@ class PostPolicy
 
     public function delete(User $user, Post $post): bool
     {
-        return $this->update($user, $post);
+        return $post->workspace->memberRoleFor($user) === WorkspaceMemberRole::Owner;
     }
 }
