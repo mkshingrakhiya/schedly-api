@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
+use App\Domain\Content\Models\Post;
 use App\Domain\Workspaces\Enums\WorkspaceMemberRole;
-use App\Models\Post;
 use App\Models\User;
 
 class PostPolicy

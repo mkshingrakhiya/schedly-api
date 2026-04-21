@@ -2,7 +2,7 @@
 
 namespace App\Providers;
 
-use App\Models\Post;
+use App\Domain\Content\Models\Post;
 use App\Models\Workspace;
 use App\Policies\PostPolicy;
 use App\Policies\WorkspacePolicy;
@@ -24,6 +24,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Gate::policy(Workspace::class, WorkspacePolicy::class);
+        Gate::policy(Post::class, PostPolicy::class);
         Gate::policy(Workspace::class, WorkspacePolicy::class);
         Gate::policy(Post::class, PostPolicy::class);
     }
