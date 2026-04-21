@@ -27,7 +27,9 @@ class StorePostRequest extends V1FormRequest
             'targets.*.channel_uuid' => [
                 'required',
                 'uuid',
-                Rule::exists('channels', 'uuid')->where('workspace_id', $workspaceId),
+                Rule::exists('channels', 'uuid')
+                    ->where('workspace_id', $workspaceId)
+                    ->withoutTrashed(),
             ],
             'targets.*.scheduled_at' => ['required', 'date'],
             'targets.*.published_at' => ['nullable', 'date'],

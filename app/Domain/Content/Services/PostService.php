@@ -81,6 +81,11 @@ class PostService
 
     public function delete(Post $post, Workspace $workspace): void
     {
+        // TODO: Review this check
+        if ($post->workspace_id !== $workspace->id) {
+            abort(404);
+        }
+
         $post->delete();
     }
 

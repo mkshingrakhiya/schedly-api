@@ -5,6 +5,7 @@ namespace Tests\Feature\Content;
 use App\Domain\Content\Enums\PostStatus;
 use App\Domain\Content\Models\Channel;
 use App\Domain\Content\Models\Post;
+use App\Domain\Content\Models\PostTarget;
 use App\Models\Platform;
 use App\Models\User;
 use App\Models\Workspace;
@@ -29,7 +30,11 @@ class PostControllerTest extends TestCase
             'created_by' => $workspace->owner_id,
         ]);
 
-        $this->getJson('/api/v1/posts/'.$post->uuid, $this->workspaceHeader($workspace->uuid))
+        $this
+            ->withHeaders($this->workspaceHeader($workspace->uuid))
+            ->patchJson('/api/v1/posts/'.$post->uuid, [
+                'content' => 'try',
+            ])
             ->assertUnauthorized();
     }
 
@@ -45,7 +50,11 @@ class PostControllerTest extends TestCase
             'created_by' => $owner->id,
         ]);
 
-        $this->getJson('/api/v1/posts/' . $post->uuid)->assertStatus(400);
+        $this->getJson('/api/v1/posts/'.$post->uuid)->assertStatus(400);
+
+        $this
+            ->patchJson('/api/v1/posts/'.$post->uuid, ['content' => 'x'])
+            ->assertStatus(400);
     }
 
     public function test_workspace_member_can_list_posts(): void
@@ -178,6 +187,177 @@ class PostControllerTest extends TestCase
             'content' => 'New',
             'status' => PostStatus::Published->value,
         ]);
+    }
+
+    public function test_update_requires_workspace_header(): void
+    {
+        [$workspace, $_channel, $owner] = $this->workspaceChannelAndOwner();
+        Sanctum::actingAs($owner);
+
+        $post = Post::factory()->create([
+            'workspace_id' => $workspace->id,
+            'created_by' => $owner->id,
+        ]);
+
+        $this
+            ->withHeaders(['Accept' => 'application/json'])
+            ->patchJson('/api/v1/posts/'.$post->uuid, ['content' => 'only with header'])
+            ->assertStatus(400);
+    }
+
+    public function test_update_returns_404_when_post_belongs_to_another_workspace(): void
+    {
+        [$workspaceA] = $this->workspaceChannelAndOwner();
+        [$workspaceB, $_channelB, $ownerB] = $this->workspaceChannelAndOwner();
+
+        $post = Post::factory()->create([
+            'workspace_id' => $workspaceB->id,
+            'created_by' => $ownerB->id,
+        ]);
+
+        Sanctum::actingAs($ownerB);
+
+        $this
+            ->withHeaders($this->workspaceHeader($workspaceA->uuid))
+            ->patchJson('/api/v1/posts/'.$post->uuid, ['content' => 'nope'])
+            ->assertNotFound();
+    }
+
+    public function test_owner_can_partially_update_content_without_changing_status(): void
+    {
+        [$workspace, $_channel, $owner] = $this->workspaceChannelAndOwner();
+        Sanctum::actingAs($owner);
+
+        $post = Post::factory()->create([
+            'workspace_id' => $workspace->id,
+            'created_by' => $owner->id,
+            'content' => 'Original',
+            'status' => PostStatus::Scheduled,
+        ]);
+
+        $this
+            ->withHeaders($this->workspaceHeader($workspace->uuid))
+            ->patchJson('/api/v1/posts/'.$post->uuid, ['content' => 'Only body'])
+            ->assertOk()
+            ->assertJsonPath('data.content', 'Only body')
+            ->assertJsonPath('data.status', PostStatus::Scheduled->value);
+
+        $this->assertDatabaseHas('posts', [
+            'id' => $post->id,
+            'content' => 'Only body',
+            'status' => PostStatus::Scheduled->value,
+        ]);
+    }
+
+    public function test_owner_can_replace_targets_on_update(): void
+    {
+        [$workspace, $channelA, $owner] = $this->workspaceChannelAndOwner();
+        $platform = Platform::query()->where('slug', 'facebook')->firstOrFail();
+        $channelB = Channel::factory()->create([
+            'workspace_id' => $workspace->id,
+            'platform_id' => $platform->id,
+            'created_by' => $owner->id,
+        ]);
+
+        Sanctum::actingAs($owner);
+
+        $post = Post::factory()->create([
+            'workspace_id' => $workspace->id,
+            'created_by' => $owner->id,
+        ]);
+
+        PostTarget::factory()->create([
+            'post_id' => $post->id,
+            'channel_id' => $channelA->id,
+            'scheduled_at' => now()->addDays(3),
+        ]);
+
+        $scheduledAt = now()->addWeek()->startOfSecond()->toISOString();
+
+        $this
+            ->withHeaders($this->workspaceHeader($workspace->uuid))
+            ->patchJson('/api/v1/posts/'.$post->uuid, [
+                'targets' => [
+                    [
+                        'channel_uuid' => $channelB->uuid,
+                        'scheduled_at' => $scheduledAt,
+                    ],
+                ],
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.targets.0.channel.uuid', $channelB->uuid);
+
+        $this->assertDatabaseMissing('post_targets', ['channel_id' => $channelA->id]);
+        $this->assertDatabaseHas('post_targets', [
+            'post_id' => $post->id,
+            'channel_id' => $channelB->id,
+        ]);
+        $this->assertSame(1, PostTarget::query()->where('post_id', $post->id)->count());
+    }
+
+    public function test_update_validates_post_status_enum(): void
+    {
+        [$workspace, $_channel, $owner] = $this->workspaceChannelAndOwner();
+        Sanctum::actingAs($owner);
+
+        $post = Post::factory()->create([
+            'workspace_id' => $workspace->id,
+            'created_by' => $owner->id,
+        ]);
+
+        $this
+            ->withHeaders($this->workspaceHeader($workspace->uuid))
+            ->patchJson('/api/v1/posts/'.$post->uuid, [
+                'status' => 'not-a-valid-status',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['status']);
+    }
+
+    public function test_update_validates_target_channel_must_belong_to_workspace(): void
+    {
+        [$workspaceA, $_channelA, $ownerA] = $this->workspaceChannelAndOwner();
+        [$workspaceB, $channelB] = $this->workspaceChannelAndOwner();
+
+        Sanctum::actingAs($ownerA);
+
+        $post = Post::factory()->create([
+            'workspace_id' => $workspaceA->id,
+            'created_by' => $ownerA->id,
+        ]);
+
+        $this
+            ->withHeaders($this->workspaceHeader($workspaceA->uuid))
+            ->patchJson('/api/v1/posts/'.$post->uuid, [
+                'targets' => [
+                    [
+                        'channel_uuid' => $channelB->uuid,
+                        'scheduled_at' => now()->addDay()->toISOString(),
+                    ],
+                ],
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['targets.0.channel_uuid']);
+    }
+
+    public function test_update_with_empty_payload_does_not_change_attributes(): void
+    {
+        [$workspace, $_channel, $owner] = $this->workspaceChannelAndOwner();
+        Sanctum::actingAs($owner);
+
+        $post = Post::factory()->create([
+            'workspace_id' => $workspace->id,
+            'created_by' => $owner->id,
+            'content' => 'Untouched',
+            'status' => PostStatus::Scheduled,
+        ]);
+
+        $this
+            ->withHeaders($this->workspaceHeader($workspace->uuid))
+            ->patchJson('/api/v1/posts/'.$post->uuid, [])
+            ->assertOk()
+            ->assertJsonPath('data.content', 'Untouched')
+            ->assertJsonPath('data.status', PostStatus::Scheduled->value);
     }
 
     public function test_owner_can_delete_post(): void

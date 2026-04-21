@@ -17,4 +17,14 @@ class WorkspacePolicy
     {
         return $workspace->memberRoleFor($user) === WorkspaceMemberRole::Owner;
     }
+
+    public function viewChannels(User $user, Workspace $workspace): bool
+    {
+        return $workspace->memberRoleFor($user) !== null;
+    }
+
+    public function manageChannels(User $user, Workspace $workspace): bool
+    {
+        return $workspace->memberRoleFor($user) === WorkspaceMemberRole::Owner;
+    }
 }
