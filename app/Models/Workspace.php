@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Domain\Content\Models\Channel;
+use App\Domain\Content\Models\Post;
 use App\Domain\Workspaces\Enums\WorkspaceMemberRole;
 use App\Models\Concerns\HasUuid;
 use Database\Factories\WorkspaceFactory;
@@ -56,6 +58,19 @@ class Workspace extends Model
             ->withTimestamps();
     }
 
+    public function memberRoleFor(User $user): ?WorkspaceMemberRole
+    {
+        $member = $this->workspaceMembers()
+            ->where('user_id', $user->id)
+            ->first();
+
+        if ($member === null) {
+            return null;
+        }
+
+        return $member->role;
+    }
+
     /**
      * @return HasMany<Channel, $this>
      */
@@ -70,18 +85,5 @@ class Workspace extends Model
     public function posts(): HasMany
     {
         return $this->hasMany(Post::class);
-    }
-
-    public function memberRoleFor(User $user): ?WorkspaceMemberRole
-    {
-        $member = $this->workspaceMembers()
-            ->where('user_id', $user->id)
-            ->first();
-
-        if ($member === null) {
-            return null;
-        }
-
-        return $member->role;
     }
 }

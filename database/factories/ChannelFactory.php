@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Models\Channel;
+use App\Domain\Content\Models\Channel;
 use App\Models\Platform;
 use App\Models\User;
 use App\Models\Workspace;
@@ -24,10 +24,10 @@ class ChannelFactory extends Factory
             'workspace_id' => Workspace::factory(),
             'platform_id' => Platform::factory(),
             'platform_account_id' => fake()->numerify('##########'),
-            'handle' => fake()->userName(),
+            'handle' => fake()->unique()->userName(),
             'access_token' => fake()->sha256(),
-            'refresh_token' => fake()->sha256(),
-            'token_expires_at' => now()->addHour(),
+            'refresh_token' => fake()->optional()->sha256(),
+            'token_expires_at' => fake()->optional()->dateTimeBetween('now', '+1 year'),
             'created_by' => User::factory(),
         ];
     }

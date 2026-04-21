@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models;
+namespace App\Domain\Content\Models;
 
 use App\Domain\Content\Enums\PostTargetStatus;
 use App\Models\Concerns\HasUuid;
@@ -47,6 +47,11 @@ class PostTarget extends Model
             'published_at' => 'datetime',
             'platform_options' => 'array',
         ];
+    }
+
+    protected static function newFactory(): PostTargetFactory
+    {
+        return PostTargetFactory::new();
     }
 
     /**
