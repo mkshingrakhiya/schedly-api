@@ -44,6 +44,12 @@ class UpdatePostRequest extends V1FormRequest
             'targets.*.scheduled_at' => ['required', 'date'],
             'targets.*.published_at' => ['nullable', 'date'],
             'targets.*.platform_options' => ['nullable', 'array'],
+            'media_uuids' => ['sometimes', 'array'],
+            'media_uuids.*' => [
+                'required',
+                'uuid',
+                Rule::exists('post_media', 'uuid')->where('workspace_id', $workspaceId),
+            ],
         ];
     }
 

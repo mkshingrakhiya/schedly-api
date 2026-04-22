@@ -54,6 +54,8 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    'post_media_storage_path' => env('POST_MEDIA_STORAGE_PATH', 'workspace/%s/media/posts'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

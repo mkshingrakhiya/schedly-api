@@ -6,7 +6,6 @@ use App\Domain\Content\Models\Channel;
 use App\Domain\Content\Models\Post;
 use App\Enums\WorkspaceMemberRole;
 use App\Models\Concerns\HasUuid;
-use Database\Factories\WorkspaceFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;

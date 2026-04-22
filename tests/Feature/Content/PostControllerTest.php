@@ -5,11 +5,14 @@ namespace Tests\Feature\Content;
 use App\Domain\Content\Enums\PostStatus;
 use App\Domain\Content\Models\Channel;
 use App\Domain\Content\Models\Post;
+use App\Domain\Content\Models\PostMedia;
 use App\Domain\Content\Models\PostTarget;
 use App\Models\Platform;
 use App\Models\User;
 use App\Models\Workspace;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
@@ -376,6 +379,245 @@ class PostControllerTest extends TestCase
             ->assertNoContent();
 
         $this->assertSoftDeleted($post);
+    }
+
+    public function test_store_links_media_uuids(): void
+    {
+        Storage::fake('public');
+
+        [$workspace, $channel, $owner] = $this->workspaceChannelAndOwner();
+        Sanctum::actingAs($owner);
+
+        $mediaUuid = $this
+            ->withHeaders(array_merge($this->workspaceHeader($workspace->uuid), ['Accept' => 'application/json']))
+            ->post('/api/v1/posts/media/upload', [
+                'file' => UploadedFile::fake()->create('photo.jpg', 2048, 'image/jpeg'),
+            ])
+            ->assertCreated()
+            ->json('data.uuid');
+
+        $scheduledAt = now()->addDay()->startOfSecond()->toISOString();
+
+        $response = $this
+            ->withHeaders($this->workspaceHeader($workspace->uuid))
+            ->postJson('/api/v1/posts', [
+                'content' => 'Body',
+                'targets' => [
+                    [
+                        'channel_uuid' => $channel->uuid,
+                        'scheduled_at' => $scheduledAt,
+                    ],
+                ],
+                'media_uuids' => [$mediaUuid],
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.media.0.uuid', $mediaUuid);
+
+        $post = Post::query()->where('uuid', $response->json('data.uuid'))->firstOrFail();
+        $this->assertDatabaseHas('post_media', [
+            'uuid' => $mediaUuid,
+            'post_id' => $post->id,
+        ]);
+    }
+
+    public function test_store_rejects_media_uuid_from_other_workspace(): void
+    {
+        [$workspaceA, $channelA, $ownerA] = $this->workspaceChannelAndOwner();
+        [$workspaceB] = $this->workspaceChannelAndOwner();
+
+        $foreignMedia = PostMedia::factory()->create([
+            'workspace_id' => $workspaceB->id,
+            'owner_id' => $workspaceB->owner_id,
+            'post_id' => null,
+        ]);
+
+        Sanctum::actingAs($ownerA);
+        $scheduledAt = now()->addDay()->startOfSecond()->toISOString();
+
+        $this
+            ->withHeaders($this->workspaceHeader($workspaceA->uuid))
+            ->postJson('/api/v1/posts', [
+                'content' => 'Body',
+                'targets' => [
+                    [
+                        'channel_uuid' => $channelA->uuid,
+                        'scheduled_at' => $scheduledAt,
+                    ],
+                ],
+                'media_uuids' => [$foreignMedia->uuid],
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['media_uuids.0']);
+    }
+
+    public function test_store_rejects_media_already_linked_to_another_post(): void
+    {
+        Storage::fake('public');
+
+        [$workspace, $channel, $owner] = $this->workspaceChannelAndOwner();
+        Sanctum::actingAs($owner);
+
+        $mediaUuid = $this
+            ->withHeaders(array_merge($this->workspaceHeader($workspace->uuid), ['Accept' => 'application/json']))
+            ->post('/api/v1/posts/media/upload', [
+                'file' => UploadedFile::fake()->create('photo.jpg', 2048, 'image/jpeg'),
+            ])
+            ->json('data.uuid');
+
+        $scheduledAt = now()->addDay()->startOfSecond()->toISOString();
+        $this
+            ->withHeaders($this->workspaceHeader($workspace->uuid))
+            ->postJson('/api/v1/posts', [
+                'content' => 'First',
+                'targets' => [
+                    [
+                        'channel_uuid' => $channel->uuid,
+                        'scheduled_at' => $scheduledAt,
+                    ],
+                ],
+                'media_uuids' => [$mediaUuid],
+            ])
+            ->assertCreated();
+
+        $this
+            ->withHeaders($this->workspaceHeader($workspace->uuid))
+            ->postJson('/api/v1/posts', [
+                'content' => 'Second',
+                'targets' => [
+                    [
+                        'channel_uuid' => $channel->uuid,
+                        'scheduled_at' => $scheduledAt,
+                    ],
+                ],
+                'media_uuids' => [$mediaUuid],
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['media_uuids']);
+    }
+
+    public function test_update_sync_media_uuids_removes_unlisted_media(): void
+    {
+        Storage::fake('public');
+
+        [$workspace, $channel, $owner] = $this->workspaceChannelAndOwner();
+        Sanctum::actingAs($owner);
+
+        $headers = array_merge($this->workspaceHeader($workspace->uuid), ['Accept' => 'application/json']);
+
+        $uuidA = $this->withHeaders($headers)->post('/api/v1/posts/media/upload', [
+            'file' => UploadedFile::fake()->create('a.jpg', 100, 'image/jpeg'),
+        ])->json('data.uuid');
+        $uuidB = $this->withHeaders($headers)->post('/api/v1/posts/media/upload', [
+            'file' => UploadedFile::fake()->create('b.jpg', 100, 'image/jpeg'),
+        ])->json('data.uuid');
+
+        $scheduledAt = now()->addDay()->startOfSecond()->toISOString();
+        $postResponse = $this
+            ->withHeaders($this->workspaceHeader($workspace->uuid))
+            ->postJson('/api/v1/posts', [
+                'content' => 'Post',
+                'targets' => [
+                    [
+                        'channel_uuid' => $channel->uuid,
+                        'scheduled_at' => $scheduledAt,
+                    ],
+                ],
+                'media_uuids' => [$uuidA, $uuidB],
+            ])
+            ->assertCreated();
+
+        $postUuid = $postResponse->json('data.uuid');
+        $mediaA = PostMedia::query()->where('uuid', $uuidA)->firstOrFail();
+        $pathB = PostMedia::query()->where('uuid', $uuidB)->value('path');
+        $this->assertIsString($pathB);
+
+        $this
+            ->withHeaders($this->workspaceHeader($workspace->uuid))
+            ->patchJson('/api/v1/posts/'.$postUuid, [
+                'media_uuids' => [$uuidA],
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.media.0.uuid', $uuidA);
+
+        $this->assertDatabaseHas('post_media', ['uuid' => $uuidA]);
+        $this->assertDatabaseMissing('post_media', ['uuid' => $uuidB]);
+        Storage::disk('public')->assertMissing($pathB);
+    }
+
+    public function test_update_without_media_uuids_does_not_remove_media(): void
+    {
+        Storage::fake('public');
+
+        [$workspace, $channel, $owner] = $this->workspaceChannelAndOwner();
+        Sanctum::actingAs($owner);
+
+        $headers = array_merge($this->workspaceHeader($workspace->uuid), ['Accept' => 'application/json']);
+        $mediaUuid = $this->withHeaders($headers)->post('/api/v1/posts/media/upload', [
+            'file' => UploadedFile::fake()->create('a.jpg', 100, 'image/jpeg'),
+        ])->json('data.uuid');
+
+        $scheduledAt = now()->addDay()->startOfSecond()->toISOString();
+        $postUuid = $this
+            ->withHeaders($this->workspaceHeader($workspace->uuid))
+            ->postJson('/api/v1/posts', [
+                'content' => 'Post',
+                'targets' => [
+                    [
+                        'channel_uuid' => $channel->uuid,
+                        'scheduled_at' => $scheduledAt,
+                    ],
+                ],
+                'media_uuids' => [$mediaUuid],
+            ])
+            ->json('data.uuid');
+
+        $this
+            ->withHeaders($this->workspaceHeader($workspace->uuid))
+            ->patchJson('/api/v1/posts/'.$postUuid, [
+                'content' => 'Updated only',
+            ])
+            ->assertOk();
+
+        $this->assertDatabaseHas('post_media', ['uuid' => $mediaUuid]);
+    }
+
+    public function test_delete_post_removes_linked_media_and_files(): void
+    {
+        Storage::fake('public');
+
+        [$workspace, $channel, $owner] = $this->workspaceChannelAndOwner();
+        Sanctum::actingAs($owner);
+
+        $headers = array_merge($this->workspaceHeader($workspace->uuid), ['Accept' => 'application/json']);
+        $this->withHeaders($headers)->post('/api/v1/posts/media/upload', [
+            'file' => UploadedFile::fake()->create('a.jpg', 100, 'image/jpeg'),
+        ])->assertCreated();
+
+        $media = PostMedia::query()->where('workspace_id', $workspace->id)->firstOrFail();
+        $path = $media->path;
+
+        $scheduledAt = now()->addDay()->startOfSecond()->toISOString();
+        $postUuid = $this
+            ->withHeaders($this->workspaceHeader($workspace->uuid))
+            ->postJson('/api/v1/posts', [
+                'content' => 'Post',
+                'targets' => [
+                    [
+                        'channel_uuid' => $channel->uuid,
+                        'scheduled_at' => $scheduledAt,
+                    ],
+                ],
+                'media_uuids' => [$media->uuid],
+            ])
+            ->json('data.uuid');
+
+        $this
+            ->withHeaders($this->workspaceHeader($workspace->uuid))
+            ->deleteJson('/api/v1/posts/'.$postUuid)
+            ->assertNoContent();
+
+        $this->assertDatabaseMissing('post_media', ['id' => $media->id]);
+        Storage::disk('public')->assertMissing($path);
     }
 
     /**

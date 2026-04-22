@@ -47,7 +47,8 @@ class ChannelControllerTest extends TestCase
         Sanctum::actingAs($owner);
 
         $this
-            ->getJson('/api/v1/channels', $this->workspaceHeader($workspace->uuid))
+            ->withHeaders($this->workspaceHeader($workspace->uuid))
+            ->getJson('/api/v1/channels')
             ->assertOk()
             ->assertJsonPath('data.0.uuid', $channel->uuid)
             ->assertJsonPath('data.0.handle', $channel->handle)

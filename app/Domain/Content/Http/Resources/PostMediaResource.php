@@ -2,14 +2,15 @@
 
 namespace App\Domain\Content\Http\Resources;
 
-use App\Domain\Content\Models\Post;
+use App\Domain\Content\Models\PostMedia;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 /**
- * @mixin Post
+ * @mixin PostMedia
  */
-class PostResource extends JsonResource
+class PostMediaResource extends JsonResource
 {
     /**
      * @return array<string, mixed>
@@ -18,13 +19,13 @@ class PostResource extends JsonResource
     {
         return [
             'uuid' => $this->uuid,
-            'content' => $this->content,
-            'targets' => PostTargetResource::collection($this->whenLoaded('targets')),
-            'media' => PostMediaResource::collection($this->whenLoaded('media')),
-            'status' => $this->status->value,
+            'url' => Storage::disk($this->disk)->url($this->path),
+            'mimeType' => $this->mime_type,
+            'size' => $this->size,
+            'order' => $this->order,
+            'ownerUuid' => $this->whenLoaded('owner', fn () => $this->owner->uuid),
             'createdAt' => $this->created_at?->toISOString(),
             'updatedAt' => $this->updated_at?->toISOString(),
-            'deletedAt' => $this->deleted_at?->toISOString(),
         ];
     }
 }
