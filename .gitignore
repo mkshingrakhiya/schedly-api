@@ -12,13 +12,20 @@
 /.vscode
 /.zed
 /auth.json
+
+# Local HTTPS for Docker nginx; generate per machine (see docs/DEVELOPMENT.md)
+/docker/ssl/*
+!/docker/ssl/.gitkeep
+
 /node_modules
+/vendor
+
 /public/build
 /public/hot
 /public/storage
 /storage/*.key
 /storage/pail
-/vendor
+
 Homestead.json
 Homestead.yaml
 npm-debug.log
