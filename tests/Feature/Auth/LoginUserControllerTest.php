@@ -115,6 +115,40 @@ class LoginUserControllerTest extends TestCase
         $this
             ->postJson('/api/v1/auth/login', [])
             ->assertUnprocessable()
+            ->assertJsonStructure([
+                'message',
+                'errors' => [
+                    'email',
+                    'password',
+                ],
+            ])
+            ->assertJsonValidationErrors(['email', 'password']);
+    }
+
+    public function test_login_validation_returns_json_when_body_is_json_without_json_accept_header(): void
+    {
+        $response = $this->call(
+            'POST',
+            '/api/v1/auth/login',
+            [],
+            [],
+            [],
+            [
+                'CONTENT_TYPE' => 'application/json',
+            ],
+            json_encode([])
+        );
+
+        $response
+            ->assertStatus(422)
+            ->assertHeaderContains('content-type', 'application/json')
+            ->assertJsonStructure([
+                'message',
+                'errors' => [
+                    'email',
+                    'password',
+                ],
+            ])
             ->assertJsonValidationErrors(['email', 'password']);
     }
 }
