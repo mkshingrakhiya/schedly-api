@@ -15,13 +15,14 @@ class RegisterUserControllerTest extends TestCase
 
     public function test_user_can_register_and_receives_token(): void
     {
-        $response = $this->postJson('/api/v1/auth/register', [
-            'name' => 'Jane Doe',
-            'email' => 'jane@example.com',
-            'password' => 'password1234',
-        ]);
+        $creatorRole = Role::findBySlugOrFail(RoleSlug::CUSTOMER);
 
-        $response
+        $response = $this
+            ->postJson('/api/v1/auth/register', [
+                'name' => 'Jane Doe',
+                'email' => 'jane@example.com',
+                'password' => 'password1234',
+            ])
             ->assertCreated()
             ->assertJsonStructure([
                 'user' => [
@@ -40,18 +41,26 @@ class RegisterUserControllerTest extends TestCase
         $this->assertTrue(Str::isUuid($response->json('user.uuid')));
         $this->assertSame($user->uuid, $response->json('user.uuid'));
         $this->assertSame('customer', $response->json('user.role.slug'));
-        $creatorRoleId = Role::findBySlugOrFail(RoleSlug::CUSTOMER)->id;
-        $this->assertSame($creatorRoleId, $user->role_id);
+
+        $response->assertJsonMissingPath('user.workspaces');
+
+        $this->assertSame($creatorRole->uuid, $user->role->uuid);
+
         $this->assertDatabaseHas('users', [
             'email' => 'jane@example.com',
             'uuid' => $user->uuid,
-            'role_id' => $creatorRoleId,
+            'role_id' => $creatorRole->id,
         ]);
 
         $this->assertDatabaseHas('personal_access_tokens', [
             'tokenable_type' => $user::class,
             'tokenable_id' => $user->id,
             'name' => 'api',
+        ]);
+
+        $this->assertDatabaseHas('workspaces', [
+            'owner_id' => $user->id,
+            'name' => 'Jane Doe Workspace',
         ]);
     }
 

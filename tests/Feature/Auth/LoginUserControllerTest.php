@@ -3,6 +3,7 @@
 namespace Tests\Feature\Auth;
 
 use App\Models\User;
+use App\Models\Workspace;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Str;
@@ -14,9 +15,14 @@ class LoginUserControllerTest extends TestCase
 
     public function test_user_can_login_and_receives_token(): void
     {
-        UserFactory::new()->create([
+        $user = UserFactory::new()->create([
             'email' => 'jane@example.com',
             'password' => 'password1234',
+        ]);
+
+        $workspace = Workspace::factory()->create([
+            'name' => 'Jane Workspace',
+            'owner_id' => $user->id,
         ]);
 
         $response = $this->postJson('/api/v1/auth/login', [
@@ -32,17 +38,26 @@ class LoginUserControllerTest extends TestCase
                     'name',
                     'email',
                     'role' => ['uuid', 'slug', 'name', 'description'],
+                    'workspaces' => [
+                        '*' => [
+                            'uuid',
+                            'name',
+                            'createdAt',
+                            'updatedAt',
+                        ],
+                    ],
                     'createdAt',
                     'updatedAt',
                 ],
                 'token',
             ]);
 
-        $user = User::query()->where('email', 'jane@example.com')->firstOrFail();
-
         $this->assertTrue(Str::isUuid($response->json('user.uuid')));
         $this->assertSame($user->uuid, $response->json('user.uuid'));
         $this->assertSame('customer', $response->json('user.role.slug'));
+        $response->assertJsonCount(1, 'user.workspaces');
+        $this->assertSame($workspace->uuid, $response->json('user.workspaces.0.uuid'));
+        $this->assertSame('Jane Workspace', $response->json('user.workspaces.0.name'));
 
         $this->assertDatabaseHas('personal_access_tokens', [
             'tokenable_type' => $user::class,
