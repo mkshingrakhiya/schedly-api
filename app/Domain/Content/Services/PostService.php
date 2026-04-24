@@ -16,11 +16,13 @@ use Illuminate\Validation\ValidationException;
 
 class PostService
 {
+    public function __construct(private PostMediaService $postMediaService) {}
+
     public function index(Workspace $workspace, int $perPage = 15): LengthAwarePaginator
     {
         return Post::query()
             ->where('workspace_id', $workspace->id)
-            ->with(['creator', 'targets.channel'])
+            ->with(['creator', 'targets.channel', 'media.owner'])
             ->latest('id')
             ->paginate($perPage);
     }
@@ -42,7 +44,11 @@ class PostService
                 $this->replaceTargets($post, $workspace, $attributes['targets']);
             }
 
-            return $post->fresh()->load(['creator', 'targets.channel']);
+            if (array_key_exists('media_uuids', $attributes)) {
+                $this->postMediaService->link($workspace, $post, $attributes['media_uuids']);
+            }
+
+            return $post->fresh()->load(['creator', 'targets.channel', 'media.owner']);
         });
     }
 
@@ -51,7 +57,7 @@ class PostService
         return Post::query()
             ->where('workspace_id', $workspace->id)
             ->where('id', $post->id)
-            ->with(['creator', 'targets.channel'])
+            ->with(['creator', 'targets.channel', 'media.owner'])
             ->firstOrFail();
     }
 
@@ -75,18 +81,25 @@ class PostService
                 $this->replaceTargets($post, $workspace, $attributes['targets']);
             }
 
-            return $post->fresh()->load(['creator', 'targets.channel']);
+            if (array_key_exists('media_uuids', $attributes)) {
+                $this->postMediaService->sync($post, $workspace, $attributes['media_uuids']);
+            }
+
+            return $post->fresh()->load(['creator', 'targets.channel', 'media.owner']);
         });
     }
 
     public function delete(Post $post, Workspace $workspace): void
     {
-        // TODO: Review this check
-        if ($post->workspace_id !== $workspace->id) {
-            abort(404);
-        }
+        DB::transaction(function () use ($post): void {
+            $post->load('media');
+            
+            foreach ($post->media as $media) {
+                $this->postMediaService->delete($media);
+            }
 
-        $post->delete();
+            $post->delete();
+        });
     }
 
     /**
@@ -104,7 +117,7 @@ class PostService
                 throw ValidationException::withMessages([
                     "targets.$channelUuid" => ['Each target must include a valid channel_uuid and scheduled_at.'],
                 ]);
-           
+
             }
 
             $channel = Channel::query()

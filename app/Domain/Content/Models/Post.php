@@ -75,4 +75,12 @@ class Post extends Model
     {
         return $this->hasMany(PostTarget::class);
     }
+
+    /**
+     * @return HasMany<PostMedia, $this>
+     */
+    public function media(): HasMany
+    {
+        return $this->hasMany(PostMedia::class)->orderBy('order');
+    }
 }

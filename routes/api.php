@@ -5,6 +5,7 @@ use App\Domain\Auth\Http\Controllers\RegisterUserController;
 use App\Domain\Content\Http\Controllers\ChannelController;
 use App\Domain\Content\Http\Controllers\PlatformController;
 use App\Domain\Content\Http\Controllers\PostController;
+use App\Domain\Content\Http\Controllers\PostMediaController;
 use Illuminate\Support\Facades\Route;
 
 // Quick ping/test route
@@ -25,16 +26,24 @@ Route::prefix('v1')->name('v1.')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('platforms', [PlatformController::class, 'index'])->name('platforms.index');
 
-        Route::get('/channels', [ChannelController::class, 'index'])
-            ->name('channels.index');
+        Route::prefix('channels')->name('channels.')->group(function () {
+            Route::get('/', [ChannelController::class, 'index'])->name('index');
+            Route::post('/', [ChannelController::class, 'connect'])->name('connect');
+            Route::delete('/{channel}', [ChannelController::class, 'disconnect'])->name('disconnect');
+        });
 
-        Route::post('/channels', [ChannelController::class, 'connect'])
-            ->name('channels.connect');
+        Route::prefix('posts/media')->name('media.')->group(function () {
+            Route::post('/upload', [PostMediaController::class, 'upload'])->name('upload');
+            Route::post('/attach', [PostMediaController::class, 'attach'])->name('attach');
+            Route::delete('/{media}', [PostMediaController::class, 'delete'])->name('delete');
+        });
 
-        Route::delete('/channels/{channel}', [ChannelController::class, 'disconnect'])
-            ->name('channels.disconnect');
-
-        Route::apiResource('posts', PostController::class)
-            ->parameters(['posts' => 'post']);
+        Route::prefix('posts')->name('posts.')->group(function () {
+            Route::get('/', [PostController::class, 'index'])->name('index');
+            Route::post('/', [PostController::class, 'store'])->name('store');
+            Route::get('/{post}', [PostController::class, 'show'])->name('show');
+            Route::patch('/{post}', [PostController::class, 'update'])->name('update');
+            Route::delete('/{post}', [PostController::class, 'destroy'])->name('destroy');
+        });
     });
 });

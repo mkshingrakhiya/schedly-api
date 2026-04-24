@@ -34,6 +34,12 @@ class StorePostRequest extends V1FormRequest
             'targets.*.scheduled_at' => ['required', 'date'],
             'targets.*.published_at' => ['nullable', 'date'],
             'targets.*.platform_options' => ['nullable', 'array'],
+            'media_uuids' => ['sometimes', 'array'],
+            'media_uuids.*' => [
+                'required',
+                'uuid',
+                Rule::exists('post_media', 'uuid')->where('workspace_id', $workspaceId),
+            ],
         ];
     }
 
@@ -45,10 +51,16 @@ class StorePostRequest extends V1FormRequest
         /** @var array<string, mixed> $validated */
         $validated = $this->validated();
 
-        return [
+        $payload = [
             'content' => $validated['content'],
             'status' => $validated['status'] ?? null,
             'targets' => $validated['targets'] ?? [],
         ];
+
+        if (array_key_exists('media_uuids', $validated)) {
+            $payload['media_uuids'] = $validated['media_uuids'];
+        }
+
+        return $payload;
     }
 }
