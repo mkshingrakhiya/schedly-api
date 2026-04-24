@@ -84,6 +84,46 @@ class RegisterUserControllerTest extends TestCase
                 'password' => 'password1234',
             ])
             ->assertUnprocessable()
+            ->assertJsonStructure([
+                'message',
+                'errors' => [
+                    'email',
+                ],
+            ])
+            ->assertJsonValidationErrors(['email']);
+    }
+
+    public function test_registration_validation_returns_json_when_body_is_json_without_json_accept_header(): void
+    {
+        User::factory()->create([
+            'email' => 'jane@example.com',
+        ]);
+
+        $response = $this->call(
+            'POST',
+            '/api/v1/auth/register',
+            [],
+            [],
+            [],
+            [
+                'CONTENT_TYPE' => 'application/json',
+            ],
+            json_encode([
+                'name' => 'Jane Doe',
+                'email' => 'jane@example.com',
+                'password' => 'password1234',
+            ])
+        );
+
+        $response
+            ->assertStatus(422)
+            ->assertHeaderContains('content-type', 'application/json')
+            ->assertJsonStructure([
+                'message',
+                'errors' => [
+                    'email',
+                ],
+            ])
             ->assertJsonValidationErrors(['email']);
     }
 }
