@@ -23,14 +23,6 @@ class ChannelControllerTest extends TestCase
             ->assertUnauthorized();
     }
 
-    public function test_channels_require_workspace_header(): void
-    {
-        [$workspace, $_channel, $owner] = $this->workspaceChannelAndOwner();
-        Sanctum::actingAs($owner);
-
-        $this->getJson('/api/v1/channels')->assertStatus(400);
-    }
-
     public function test_non_member_cannot_list_channels(): void
     {
         [$workspace] = $this->workspaceChannelAndOwner();

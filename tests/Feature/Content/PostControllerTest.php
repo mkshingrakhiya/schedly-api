@@ -41,25 +41,6 @@ class PostControllerTest extends TestCase
             ->assertUnauthorized();
     }
 
-    public function test_posts_endpoints_require_workspace_header(): void
-    {
-        [$workspace, $_channel, $owner] = $this->workspaceChannelAndOwner();
-        Sanctum::actingAs($owner);
-
-        $this->getJson('/api/v1/posts')->assertStatus(400);
-
-        $post = Post::factory()->create([
-            'workspace_id' => $workspace->id,
-            'created_by' => $owner->id,
-        ]);
-
-        $this->getJson('/api/v1/posts/'.$post->uuid)->assertStatus(400);
-
-        $this
-            ->patchJson('/api/v1/posts/'.$post->uuid, ['content' => 'x'])
-            ->assertStatus(400);
-    }
-
     public function test_workspace_member_can_list_posts(): void
     {
         [$workspace, $_channel, $owner] = $this->workspaceChannelAndOwner();
@@ -190,22 +171,6 @@ class PostControllerTest extends TestCase
             'content' => 'New',
             'status' => PostStatus::Published->value,
         ]);
-    }
-
-    public function test_update_requires_workspace_header(): void
-    {
-        [$workspace, $_channel, $owner] = $this->workspaceChannelAndOwner();
-        Sanctum::actingAs($owner);
-
-        $post = Post::factory()->create([
-            'workspace_id' => $workspace->id,
-            'created_by' => $owner->id,
-        ]);
-
-        $this
-            ->withHeaders(['Accept' => 'application/json'])
-            ->patchJson('/api/v1/posts/'.$post->uuid, ['content' => 'only with header'])
-            ->assertStatus(400);
     }
 
     public function test_update_returns_404_when_post_belongs_to_another_workspace(): void

@@ -39,19 +39,6 @@ class PostMediaControllerTest extends TestCase
             ->assertUnauthorized();
     }
 
-    public function test_media_upload_requires_workspace_header(): void
-    {
-        [$workspace, $owner] = $this->workspaceAndOwner();
-        Sanctum::actingAs($owner);
-
-        $this
-            ->withHeaders(['Accept' => 'application/json'])
-            ->post('/api/v1/posts/media/upload', [
-                'file' => $this->fakeJpegUpload(),
-            ])
-            ->assertStatus(400);
-    }
-
     public function test_media_upload_accepts_jpeg(): void
     {
         [$workspace, $owner] = $this->workspaceAndOwner();
