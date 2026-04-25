@@ -5,28 +5,33 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Domain\Content\Models\Post;
 use App\Models\Concerns\HasUuid;
+use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Collection;
 use Laravel\Sanctum\HasApiTokens;
 
 /**
- *
  * @property int $id
  * @property string $uuid
  * @property int $role_id
  * @property string $name
  * @property string $email
  * @property string $password
- *
- * @property-read Role|null $role
+ * @property-read ?Role $role
+ * @property-read ?Workspace $currentWorkspace
+ * @property-read Collection<int, Workspace> $ownedWorkspaces
+ * @property-read Collection<int, Workspace> $workspaces
+ * @property-read Collection<int, Post> $posts
  */
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, HasUuid, Notifiable;
 
     /**
@@ -69,6 +74,14 @@ class User extends Authenticatable
     public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class);
+    }
+
+    /**
+     * @return HasOne<Workspace, $this>
+     */
+    public function currentWorkspace(): HasOne
+    {
+        return $this->hasOne(Workspace::class, 'owner_id')->latest();
     }
 
     /**

@@ -2,14 +2,14 @@
 
 namespace App\Domain\Auth\Http\Resources;
 
-use App\Models\User;
+use App\Models\Workspace;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * @mixin User
+ * @mixin Workspace
  */
-class UserResource extends JsonResource
+class WorkspaceResource extends JsonResource
 {
     /**
      * @return array<string, mixed>
@@ -19,10 +19,7 @@ class UserResource extends JsonResource
         return [
             'uuid' => $this->uuid,
             'name' => $this->name,
-            'email' => $this->email,
-            'role' => RoleResource::make($this->whenLoaded('role')),
-            'currentWorkspace' => WorkspaceResource::make($this->whenLoaded('currentWorkspace')),
-            'workspaces' => WorkspaceResource::collection($this->whenLoaded('workspaces')),
+            'owner' => UserResource::make($this->whenLoaded('owner')),
             'createdAt' => $this->created_at?->toISOString(),
             'updatedAt' => $this->updated_at?->toISOString(),
         ];

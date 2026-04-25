@@ -5,8 +5,11 @@ namespace App\Domain\Auth\Services;
 use App\Domain\Auth\DTOs\LoginUserDataDTO;
 use App\Domain\Auth\DTOs\RegisterUserDataDTO;
 use App\Enums\RoleSlug;
+use App\Enums\WorkspaceMemberRole;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\Workspace;
+use Exception;
 use Illuminate\Support\Facades\Auth;
 
 class AuthService
@@ -18,7 +21,10 @@ class AuthService
     {
         $data = RegisterUserDataDTO::fromArray($validated);
 
-        $creatorRole = Role::findBySlugOrFail(RoleSlug::CUSTOMER);
+        $creatorRole = Role::findBySlug(RoleSlug::CUSTOMER);
+        if ($creatorRole === null) {
+            throw new Exception('Customer role not found');
+        }
 
         $user = new User([
             'name' => $data->name,
@@ -28,6 +34,13 @@ class AuthService
 
         $user->role()->associate($creatorRole);
         $user->save();
+
+        $workspace = Workspace::create([
+            'name' => $data->name,
+            'owner_id' => $user->id,
+        ]);
+
+        $workspace->members()->attach($user, ['role' => WorkspaceMemberRole::Owner]);
 
         return $user;
     }
