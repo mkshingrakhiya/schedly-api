@@ -8,16 +8,14 @@ use App\Domain\Content\Http\Requests\ShowPostRequest;
 use App\Domain\Content\Http\Requests\StorePostRequest;
 use App\Domain\Content\Http\Requests\UpdatePostRequest;
 use App\Domain\Content\Http\Resources\PostResource;
-use App\Domain\Content\Services\PostService;
 use App\Domain\Content\Models\Post;
+use App\Domain\Content\Services\PostService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 
 class PostController
 {
-    public function __construct(private PostService $postService)
-    {
-    }
+    public function __construct(private PostService $postService) {}
 
     public function index(IndexPostsRequest $request): JsonResponse
     {

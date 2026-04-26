@@ -9,9 +9,7 @@ use Illuminate\Http\JsonResponse;
 
 class RegisterUserController
 {
-    public function __construct(private AuthService $authService)
-    {
-    }
+    public function __construct(private AuthService $authService) {}
 
     public function __invoke(RegisterUserRequest $request): JsonResponse
     {

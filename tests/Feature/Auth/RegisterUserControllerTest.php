@@ -60,7 +60,7 @@ class RegisterUserControllerTest extends TestCase
 
         $this->assertDatabaseHas('workspaces', [
             'owner_id' => $user->id,
-            'name' => 'Jane Doe Workspace',
+            'name' => 'Jane Doe',
         ]);
     }
 
