@@ -19,6 +19,8 @@ use Illuminate\Support\Carbon;
  * @property int $user_id
  * @property int $platform_id
  * @property Carbon $expires_at
+ * @property-read Workspace $workspace
+ * @property-read User $user
  */
 #[UseFactory(PlatformOAuthConnectionStateFactory::class)]
 class PlatformOAuthConnectionState extends Model

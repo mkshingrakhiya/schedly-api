@@ -23,6 +23,7 @@ use Illuminate\Support\Carbon;
  * @property ?string $refresh_token
  * @property ?Carbon $token_expires_at
  * @property int $created_by
+ * @property-read Platform $platform
  */
 #[UseFactory(ChannelFactory::class)]
 class Channel extends Model
