@@ -1,0 +1,235 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+      - '*.x'
+  pull_request:
+  schedule:
+    - cron: '0 0 * * *'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # One runner: composer install once, then validate → Pint → PHPStan (fewer total minutes vs parallel jobs).
+  checks:
+    name: Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite
+          coverage: none
+
+      - name: Validate Composer configuration
+        run: composer validate --strict
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Check code style with Pint
+        run: vendor/bin/pint --test
+
+      - name: Copy environment file
+        run: cp .env.example .env
+
+      - name: Generate app key
+        run: php artisan key:generate
+
+      - name: Run PHPStan
+        run: composer run analyse --no-interaction
+
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite
+          coverage: none
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Copy environment file
+        run: cp .env.example .env
+
+      - name: Generate app key
+        run: php artisan key:generate
+
+      - name: Execute tests
+        run: php artisan test --compact
+
+  # ---------------------------------------------------------------------------
+  # Legacy layout (parallel jobs: Quality, Lint, PHPStan each on own runner).
+  # Kept for reference; superseded by `checks` + `tests` above.
+  # ---------------------------------------------------------------------------
+  #   quality:
+  #     name: Quality
+  #     runs-on: ubuntu-latest
+  #
+  #     steps:
+  #       - name: Checkout code
+  #         uses: actions/checkout@v4
+  #
+  #       - name: Setup PHP
+  #         uses: shivammathur/setup-php@v2
+  #         with:
+  #           php-version: '8.3'
+  #           coverage: none
+  #
+  #       - name: Validate Composer configuration
+  #         run: composer validate --strict
+  #
+  #   lint:
+  #     name: Lint
+  #     runs-on: ubuntu-latest
+  #
+  #     steps:
+  #       - name: Checkout code
+  #         uses: actions/checkout@v4
+  #
+  #       - name: Setup PHP
+  #         uses: shivammathur/setup-php@v2
+  #         with:
+  #           php-version: '8.3'
+  #           extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite
+  #           coverage: none
+  #
+  #       - name: Get Composer cache directory
+  #         id: composer-cache
+  #         run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+  #
+  #       - name: Cache Composer dependencies
+  #         uses: actions/cache@v4
+  #         with:
+  #           path: ${{ steps.composer-cache.outputs.dir }}
+  #           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+  #           restore-keys: |
+  #             ${{ runner.os }}-composer-
+  #
+  #       - name: Install Composer dependencies
+  #         run: composer install --prefer-dist --no-interaction --no-progress
+  #
+  #       - name: Check code style with Pint
+  #         run: vendor/bin/pint --test
+  #
+  #   static_analysis:
+  #     name: PHPStan
+  #     runs-on: ubuntu-latest
+  #
+  #     steps:
+  #       - name: Checkout code
+  #         uses: actions/checkout@v4
+  #
+  #       - name: Setup PHP
+  #         uses: shivammathur/setup-php@v2
+  #         with:
+  #           php-version: '8.3'
+  #           extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite
+  #           coverage: none
+  #
+  #       - name: Get Composer cache directory
+  #         id: composer-cache
+  #         run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+  #
+  #       - name: Cache Composer dependencies
+  #         uses: actions/cache@v4
+  #         with:
+  #           path: ${{ steps.composer-cache.outputs.dir }}
+  #           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+  #           restore-keys: |
+  #             ${{ runner.os }}-composer-
+  #
+  #       - name: Install Composer dependencies
+  #         run: composer install --prefer-dist --no-interaction --no-progress
+  #
+  #       - name: Copy environment file
+  #         run: cp .env.example .env
+  #
+  #       - name: Generate app key
+  #         run: php artisan key:generate
+  #
+  #       - name: Run PHPStan
+  #         run: composer run analyse --no-interaction
+  #
+  #   tests:
+  #     name: Tests
+  #     runs-on: ubuntu-latest
+  #
+  #     steps:
+  #       - name: Checkout code
+  #         uses: actions/checkout@v4
+  #
+  #       - name: Setup PHP
+  #         uses: shivammathur/setup-php@v2
+  #         with:
+  #           php-version: '8.3'
+  #           extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite
+  #           coverage: none
+  #
+  #       - name: Get Composer cache directory
+  #         id: composer-cache
+  #         run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+  #
+  #       - name: Cache Composer dependencies
+  #         uses: actions/cache@v4
+  #         with:
+  #           path: ${{ steps.composer-cache.outputs.dir }}
+  #           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+  #           restore-keys: |
+  #             ${{ runner.os }}-composer-
+  #
+  #       - name: Install Composer dependencies
+  #         run: composer install --prefer-dist --no-interaction --no-progress
+  #
+  #       - name: Copy environment file
+  #         run: cp .env.example .env
+  #
+  #       - name: Generate app key
+  #         run: php artisan key:generate
+  #
+  #       - name: Execute tests
+  #         run: php artisan test --compact

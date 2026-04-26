@@ -8,11 +8,10 @@ final readonly class RegisterUserDataDTO
         public string $name,
         public string $email,
         public string $password,
-    ) {
-    }
+    ) {}
 
     /**
-     * @param array{name: string, email: string, password: string} $validated
+     * @param  array{name: string, email: string, password: string}  $validated
      */
     public static function fromArray(array $validated): self
     {

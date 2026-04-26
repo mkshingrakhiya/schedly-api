@@ -6,6 +6,7 @@ use App\Domain\Content\Models\Channel;
 use App\Models\User;
 use App\Models\Workspace;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Carbon;
 
 class ChannelService
 {
@@ -19,7 +20,7 @@ class ChannelService
     }
 
     /**
-     * @param  array{platform_id: int, handle: string, platform_account_id: string, access_token: string, refresh_token?: string|null, token_expires_at?: \Illuminate\Support\Carbon|string|null}  $attributes
+     * @param  array{platform_id: int, handle: string, platform_account_id: string, access_token: string, refresh_token?: string|null, token_expires_at?: Carbon|string|null}  $attributes
      */
     public function create(Workspace $workspace, User $creator, array $attributes): Channel
     {

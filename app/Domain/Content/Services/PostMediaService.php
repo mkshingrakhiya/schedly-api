@@ -139,8 +139,6 @@ class PostMediaService
     }
 
     /**
-     * @param  Workspace     $workspace
-     * @param  Post          $post
      * @param  list<string>  $uuids
      */
     private function attachPost(Workspace $workspace, Post $post, array $uuids): void

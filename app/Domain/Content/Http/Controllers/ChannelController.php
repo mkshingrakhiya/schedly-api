@@ -13,9 +13,7 @@ use Illuminate\Http\Response;
 
 class ChannelController
 {
-    public function __construct(private ChannelService $channelService)
-    {
-    }
+    public function __construct(private ChannelService $channelService) {}
 
     public function index(IndexChannelsRequest $request): JsonResponse
     {
