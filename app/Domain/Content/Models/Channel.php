@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -22,7 +23,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $handle
  * @property string $access_token
  * @property string|null $refresh_token
- * @property \Illuminate\Support\Carbon|null $token_expires_at
+ * @property Carbon|null $token_expires_at
  * @property int $created_by
  */
 class Channel extends Model

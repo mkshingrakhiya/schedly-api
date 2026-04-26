@@ -34,8 +34,8 @@ jobs:
       - name: Validate Composer configuration
         run: composer validate --strict
 
-  format:
-    name: Format
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
 
     steps:
