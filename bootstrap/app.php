@@ -28,4 +28,5 @@ return Application::configure(basePath: dirname(__DIR__))
                 'errors' => $exception->errors(),
             ], $exception->status);
         });
-    })->create();
+    })
+    ->create();

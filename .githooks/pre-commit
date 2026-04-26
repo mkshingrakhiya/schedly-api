@@ -1,0 +1,14 @@
+#!/bin/sh
+# Run quality checks inside the Compose `api` service (see docs/DEVELOPMENT.md).
+set -e
+
+echo "Formatting code..."
+docker-compose exec -T api composer format
+
+echo "Analyzing code..."
+docker-compose exec -T api composer analyse
+
+echo "Testing code..."
+docker-compose exec -T api composer test
+
+echo "ALL GOOD!"

@@ -76,7 +76,52 @@ Run migrations inside the `api` container:
 docker compose exec api php artisan migrate
 ```
 
-## 6. Quick checks
+## 6. Git hooks (optional)
+
+This repo ships Git hook scripts under [`.githooks/`](../.githooks/) (version-controlled). They are **not** enabled until you point Git at that directory.
+
+### One-time setup
+
+From the **repository root**:
+
+```bash
+composer run setup-hooks
+```
+
+That runs `git config core.hooksPath .githooks`, so Git uses `.githooks/pre-commit` instead of `.git/hooks/`.
+
+You can confirm:
+
+```bash
+git config --get core.hooksPath
+# should print: .githooks
+```
+
+On macOS / Linux, ensure the hook script is executable (once per clone, if needed):
+
+```bash
+chmod +x .githooks/pre-commit
+```
+
+### What `pre-commit` does
+
+The hook runs **inside the running `api` container** (same commands as a quick local gate):
+
+1. `composer format` (Pint — may modify files)
+2. `composer analyse` (PHPStan)
+3. `composer test`
+
+**Requirements:** bring the stack up first (`docker compose up -d` or equivalent) so `docker-compose exec -T api …` succeeds. The script uses `docker-compose` with a hyphen, consistent with other project docs.
+
+**If Pint changes files**, Git will still be mid-commit with a dirty tree: stage the updates (`git add …`) and run `git commit` again (or amend) so the formatted code is included.
+
+**To skip hooks for a single commit** (use sparingly):
+
+```bash
+git commit --no-verify
+```
+
+## 7. Quick checks
 
 ```bash
 docker compose ps
@@ -91,7 +136,7 @@ docker compose exec nginx nginx -t
   curl -skI https://schedly.test/
   ```
 
-## 7. Optional: if private keys were ever committed
+## 8. Optional: if private keys were ever committed
 
 If keys were added to git before they were ignored, remove them from the index (keeps the files on disk if needed; adjust paths to match your repo):
 

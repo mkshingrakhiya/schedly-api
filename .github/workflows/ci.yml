@@ -15,6 +15,7 @@ concurrency:
 
 permissions:
   contents: read
+  pull-requests: write
 
 jobs:
   # One runner: composer install once, then validate → Pint → PHPStan (fewer total minutes vs parallel jobs).
@@ -25,6 +26,14 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup reviewdog
+        if: github.event_name == 'pull_request'
+        uses: reviewdog/action-setup@v1
+        with:
+          reviewdog_version: latest
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -52,7 +61,22 @@ jobs:
         run: composer install --prefer-dist --no-interaction --no-progress
 
       - name: Check code style with Pint
+        if: github.event_name != 'pull_request'
         run: vendor/bin/pint --test
+
+      - name: Check code style with Pint (reviewdog)
+        if: github.event_name == 'pull_request'
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          vendor/bin/pint --test --format=checkstyle --output-to-file="${RUNNER_TEMP}/pint-checkstyle.xml" --output-format=checkstyle
+          pint_exit=$?
+          set -e
+          if [ -f "${RUNNER_TEMP}/pint-checkstyle.xml" ]; then
+            reviewdog -f=checkstyle -name=Pint -reporter=github-pr-review -filter-mode=added -fail-on-error=false < "${RUNNER_TEMP}/pint-checkstyle.xml"
+          fi
+          exit "${pint_exit}"
 
       - name: Copy environment file
         run: cp .env.example .env
@@ -61,7 +85,20 @@ jobs:
         run: php artisan key:generate
 
       - name: Run PHPStan
+        if: github.event_name != 'pull_request'
         run: composer run analyse --no-interaction
+
+      - name: Run PHPStan (reviewdog)
+        if: github.event_name == 'pull_request'
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          vendor/bin/phpstan analyse --memory-limit=1G --no-progress --error-format=json > "${RUNNER_TEMP}/phpstan.json"
+          stan_exit=$?
+          set -e
+          reviewdog -f=phpstan -name=PHPStan -reporter=github-pr-review -filter-mode=added -fail-on-error=false < "${RUNNER_TEMP}/phpstan.json" || true
+          exit "${stan_exit}"
 
   tests:
     name: Tests
@@ -70,6 +107,14 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup reviewdog
+        if: github.event_name == 'pull_request'
+        uses: reviewdog/action-setup@v1
+        with:
+          reviewdog_version: latest
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -100,7 +145,22 @@ jobs:
         run: php artisan key:generate
 
       - name: Execute tests
+        if: github.event_name != 'pull_request'
         run: php artisan test --compact
+
+      - name: Execute tests (reviewdog)
+        if: github.event_name == 'pull_request'
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          vendor/bin/phpunit --configuration phpunit.xml --log-junit "${RUNNER_TEMP}/phpunit-junit.xml"
+          test_exit=$?
+          set -e
+          if [ -f "${RUNNER_TEMP}/phpunit-junit.xml" ]; then
+            reviewdog -f=junit -name=PHPUnit -reporter=github-pr-review -filter-mode=added -fail-on-error=false < "${RUNNER_TEMP}/phpunit-junit.xml" || true
+          fi
+          exit "${test_exit}"
 
   # ---------------------------------------------------------------------------
   # Legacy layout (parallel jobs: Quality, Lint, PHPStan each on own runner).
