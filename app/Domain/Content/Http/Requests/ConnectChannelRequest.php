@@ -4,6 +4,7 @@ namespace App\Domain\Content\Http\Requests;
 
 use App\Http\Requests\Api\V1FormRequest;
 use App\Models\Platform;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
 
 class ConnectChannelRequest extends V1FormRequest
@@ -48,7 +49,7 @@ class ConnectChannelRequest extends V1FormRequest
     }
 
     /**
-     * @return array{platform_id: int, handle: string, platform_account_id: string, access_token: string, refresh_token: string|null, token_expires_at: \Illuminate\Support\Carbon|null}
+     * @return array{platform_id: int, handle: string, platform_account_id: string, access_token: string, refresh_token: string|null, token_expires_at: Carbon|null}
      */
     public function createAttributes(): array
     {

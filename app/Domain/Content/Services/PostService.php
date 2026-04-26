@@ -93,7 +93,7 @@ class PostService
     {
         DB::transaction(function () use ($post): void {
             $post->load('media');
-            
+
             foreach ($post->media as $media) {
                 $this->postMediaService->delete($media);
             }
