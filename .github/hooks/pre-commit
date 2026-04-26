@@ -1,10 +1,11 @@
 #!/bin/sh
 echo "Formatting code..."
-docker-compose exec api vendor/bin/pint
+docker-compose exec api composer format
 
-# Run PHPStan
+echo "Analyzing code..."
+docker-compose exec api composer analyse
 
 echo "Testing code..."
-docker-compose exec api php artisan test --compact
+docker-compose exec api composer test
 
 echo "ALL GOOD!"
