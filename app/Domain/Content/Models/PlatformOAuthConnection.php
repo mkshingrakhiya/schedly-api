@@ -3,13 +3,10 @@
 namespace App\Domain\Content\Models;
 
 use App\Models\Concerns\HasUuid;
-use App\Models\Platform;
-use Database\Factories\ChannelFactory;
+use Database\Factories\PlatformOAuthConnectionFactory;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
 /**
@@ -17,18 +14,21 @@ use Illuminate\Support\Carbon;
  * @property string $uuid
  * @property int $workspace_id
  * @property int $platform_id
- * @property string $platform_account_id
- * @property string $handle
+ * @property string $provider_user_id
  * @property string $access_token
- * @property ?string $refresh_token
- * @property ?Carbon $token_expires_at
+ * @property Carbon|null $expires_at
  * @property int $created_by
  */
-#[UseFactory(ChannelFactory::class)]
-class Channel extends Model
+#[UseFactory(PlatformOAuthConnectionFactory::class)]
+class PlatformOAuthConnection extends Model
 {
-    /** @use HasFactory<ChannelFactory> */
-    use HasFactory, HasUuid, SoftDeletes;
+    /** @use HasFactory<PlatformOAuthConnectionFactory> */
+    use HasFactory, HasUuid;
+
+    /**
+     * @var string
+     */
+    protected $table = 'platform_oauth_connections';
 
     /**
      * @var list<string>
@@ -36,11 +36,9 @@ class Channel extends Model
     protected $fillable = [
         'workspace_id',
         'platform_id',
-        'platform_account_id',
-        'handle',
+        'provider_user_id',
         'access_token',
-        'refresh_token',
-        'token_expires_at',
+        'expires_at',
         'created_by',
     ];
 
@@ -49,7 +47,6 @@ class Channel extends Model
      */
     protected $hidden = [
         'access_token',
-        'refresh_token',
     ];
 
     /**
@@ -59,12 +56,7 @@ class Channel extends Model
     {
         return [
             'access_token' => 'encrypted',
-            'token_expires_at' => 'datetime',
+            'expires_at' => 'datetime',
         ];
-    }
-
-    public function platform(): BelongsTo
-    {
-        return $this->belongsTo(Platform::class);
     }
 }

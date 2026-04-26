@@ -16,6 +16,11 @@ trait HasUuid
         });
     }
 
+    public static function findByUuid(string $uuid): ?self
+    {
+        return static::query()->where('uuid', $uuid)->first();
+    }
+
     public function initializeHasUuid(): void
     {
         $this->mergeHidden(['id']);

@@ -23,4 +23,10 @@ class Platform extends Model
         'slug',
         'name',
     ];
+
+    // TODO: Move to HasSlug trait
+    public static function findBySlug(string $slug): ?self
+    {
+        return static::query()->where('slug', $slug)->first();
+    }
 }

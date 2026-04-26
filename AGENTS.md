@@ -110,6 +110,10 @@ This project has domain-specific skills available. You MUST activate the relevan
 - If you're creating a generic PHP class, use `php artisan make:class`.
 - Pass `--no-interaction` to all Artisan commands to ensure they work without user input. You should also pass the correct `--options` to ensure correct behavior.
 
+### Docker Container
+
+- When running commands i.e. `composer install` or `php artisan ...`, run it inside container using command `docker-compose`. The docker service name is api.
+
 ### Model Creation
 
 - When creating new models, create useful factories and seeders for them too. Ask the user if they need any other things, using `php artisan make:model --help` to check the available options.
