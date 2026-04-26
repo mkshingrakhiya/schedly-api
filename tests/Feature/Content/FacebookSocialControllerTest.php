@@ -32,7 +32,7 @@ class FacebookSocialControllerTest extends TestCase
         Sanctum::actingAs($owner);
 
         $this->getJson('/api/v1/social/facebook/connect')->assertStatus(400);
-        
+
         $this->postJson('/api/v1/social/facebook/channels', ['channels' => []])->assertStatus(400);
     }
 
