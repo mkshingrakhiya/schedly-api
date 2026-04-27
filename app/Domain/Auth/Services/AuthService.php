@@ -21,7 +21,7 @@ class AuthService
     {
         $data = RegisterUserDataDTO::fromArray($validated);
 
-        $creatorRole = Role::findBySlug(RoleSlug::CUSTOMER);
+        $creatorRole = Role::findBySlug(RoleSlug::CUSTOMER->value);
         if ($creatorRole === null) {
             throw new Exception('Customer role not found');
         }

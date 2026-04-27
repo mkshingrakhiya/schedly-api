@@ -13,14 +13,14 @@ class RoleTest extends TestCase
 
     public function test_find_by_slug_or_fail_returns_creator_role(): void
     {
-        $role = Role::findBySlugOrFail(RoleSlug::CUSTOMER);
+        $role = Role::findBySlugOrFail(RoleSlug::CUSTOMER->value);
 
         $this->assertSame('customer', $role->slug);
     }
 
     public function test_find_by_slug_accepts_enum_or_string_and_matches_first(): void
     {
-        $fromEnum = Role::findBySlug(RoleSlug::CUSTOMER);
+        $fromEnum = Role::findBySlug(RoleSlug::CUSTOMER->value);
         $fromString = Role::findBySlug('customer');
 
         $this->assertNotNull($fromEnum);

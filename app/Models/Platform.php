@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasSlug;
 use Database\Factories\PlatformFactory;
+use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -11,10 +13,10 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $slug
  * @property string $name
  */
+#[UseFactory(PlatformFactory::class)]
 class Platform extends Model
 {
-    /** @use HasFactory<PlatformFactory> */
-    use HasFactory;
+    use HasFactory, HasSlug;
 
     /**
      * @var list<string>
@@ -23,10 +25,4 @@ class Platform extends Model
         'slug',
         'name',
     ];
-
-    // TODO: Move to HasSlug trait
-    public static function findBySlug(string $slug): ?self
-    {
-        return static::query()->where('slug', $slug)->first();
-    }
 }
