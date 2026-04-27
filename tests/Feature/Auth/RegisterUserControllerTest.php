@@ -15,7 +15,7 @@ class RegisterUserControllerTest extends TestCase
 
     public function test_user_can_register_and_receives_token(): void
     {
-        $creatorRole = Role::findBySlugOrFail(RoleSlug::CUSTOMER);
+        $creatorRole = Role::findBySlugOrFail(RoleSlug::CUSTOMER->value);
 
         $response = $this
             ->postJson('/api/v1/auth/register', [

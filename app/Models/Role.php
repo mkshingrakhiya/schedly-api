@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Enums\RoleSlug;
+use App\Models\Concerns\HasSlug;
 use App\Models\Concerns\HasUuid;
 use Database\Factories\RoleFactory;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
@@ -20,7 +20,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[UseFactory(RoleFactory::class)]
 class Role extends Model
 {
-    use HasFactory, HasUuid;
+    use HasFactory, HasSlug, HasUuid;
 
     /**
      * @var list<string>
@@ -37,25 +37,5 @@ class Role extends Model
     public function users(): HasMany
     {
         return $this->hasMany(User::class);
-    }
-
-    /**
-     * @param  RoleSlug|non-falsy-string  $slug
-     */
-    public static function findBySlug(RoleSlug|string $slug): ?self
-    {
-        $key = $slug instanceof RoleSlug ? $slug->value : $slug;
-
-        return static::query()->where('slug', $key)->first();
-    }
-
-    /**
-     * @param  RoleSlug|non-falsy-string  $slug
-     */
-    public static function findBySlugOrFail(RoleSlug|string $slug): self
-    {
-        $key = $slug instanceof RoleSlug ? $slug->value : $slug;
-
-        return static::query()->where('slug', $key)->firstOrFail();
     }
 }
