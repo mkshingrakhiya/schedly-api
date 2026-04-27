@@ -61,7 +61,8 @@
         ],
         "lint": "pint --test",
         "format": "pint",
-        "analyse": "phpstan analyse --memory-limit=1G --no-progress"
+        "analyse": "phpstan analyse --memory-limit=1G --no-progress",
+        "setup-hooks": "git config core.hooksPath .githooks"
     },
     "extra": {
         "laravel": {

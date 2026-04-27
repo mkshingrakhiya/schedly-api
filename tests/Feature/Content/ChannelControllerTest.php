@@ -200,6 +200,7 @@ class ChannelControllerTest extends TestCase
     {
         $workspace = Workspace::factory()->create();
         $platform = Platform::query()->where('slug', 'instagram')->firstOrFail();
+
         $channel = Channel::factory()->create([
             'workspace_id' => $workspace->id,
             'platform_id' => $platform->id,
