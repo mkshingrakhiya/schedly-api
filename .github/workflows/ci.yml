@@ -43,6 +43,7 @@ jobs:
           coverage: none
 
       - name: Validate Composer configuration
+        id: composer_validate
         run: composer validate --strict
 
       - name: Get Composer cache directory
@@ -61,10 +62,12 @@ jobs:
         run: composer install --prefer-dist --no-interaction --no-progress
 
       - name: Check code style with Pint
+        id: lint
         if: github.event_name != 'pull_request'
         run: vendor/bin/pint --test
 
       - name: Check code style with Pint (reviewdog)
+        id: lint_reviewdog
         if: github.event_name == 'pull_request'
         env:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ github.token }}
@@ -85,10 +88,12 @@ jobs:
         run: php artisan key:generate
 
       - name: Run PHPStan
+        id: static_analysis
         if: github.event_name != 'pull_request'
         run: composer run analyse --no-interaction
 
       - name: Run PHPStan (reviewdog)
+        id: static_analysis_reviewdog
         if: github.event_name == 'pull_request'
         env:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ github.token }}
@@ -99,6 +104,68 @@ jobs:
           set -e
           reviewdog -f=phpstan -name=PHPStan -reporter=github-pr-review -filter-mode=added -fail-on-error=false < "${RUNNER_TEMP}/phpstan.json" || true
           exit "${stan_exit}"
+
+      - name: Comment checks summary on pull request
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const marker = '<!-- checks-summary-comment -->';
+            const statusMap = {
+              success: { icon: '✅', label: 'Passed' },
+              failure: { icon: '❌', label: 'Failed' },
+              cancelled: { icon: '⏹️', label: 'Cancelled' },
+              skipped: { icon: '⏭️', label: 'Skipped' },
+            };
+
+            const composerOutcome = '${{ steps.composer_validate.outcome }}';
+            const lintOutcome = '${{ steps.lint_reviewdog.outcome || steps.lint.outcome }}';
+            const staticAnalysisOutcome = '${{ steps.static_analysis_reviewdog.outcome || steps.static_analysis.outcome }}';
+
+            const describe = (outcome) => statusMap[outcome] ?? { icon: '❔', label: outcome || 'Unknown' };
+            const composerStatus = describe(composerOutcome);
+            const lintStatus = describe(lintOutcome);
+            const staticAnalysisStatus = describe(staticAnalysisOutcome);
+
+            const staticAnalysisMessage = staticAnalysisOutcome === 'success'
+              ? 'No issues detected'
+              : staticAnalysisOutcome === 'failure'
+                ? 'Issues detected'
+                : staticAnalysisStatus.label;
+
+            const body = [
+              marker,
+              '## Checks Summary',
+              `- Dependencies Security Check: ${composerStatus.icon} **${composerStatus.label}**`,
+              `- Lint: ${lintStatus.icon} **${lintStatus.label}**`,
+              `- Static Analysis: ${staticAnalysisStatus.icon} **${staticAnalysisMessage}**`,
+            ].join('\n');
+
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+            const existing = comments.find((comment) => comment.body && comment.body.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body,
+              });
+            }
 
   tests:
     name: Tests
@@ -165,7 +232,7 @@ jobs:
               coverage
                 ? `- Total coverage: **${coverage}%**`
                 : '- Total coverage: **Unavailable** (coverage line not detected in test output).',
-              '- Threshold enforced in CI: **80%**',
+              '- Threshold: **80%**',
             ].join('\n');
 
             const { owner, repo } = context.repo;
