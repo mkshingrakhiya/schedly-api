@@ -121,7 +121,7 @@ jobs:
         with:
           php-version: '8.3'
           extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite
-          coverage: none
+          coverage: pcov
 
       - name: Get Composer cache directory
         id: composer-cache
@@ -146,7 +146,7 @@ jobs:
 
       - name: Execute tests
         if: github.event_name != 'pull_request'
-        run: php artisan test --compact
+        run: php artisan test --compact --coverage --min=80
 
       - name: Execute tests (reviewdog)
         if: github.event_name == 'pull_request'
@@ -154,7 +154,7 @@ jobs:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ github.token }}
         run: |
           set +e
-          vendor/bin/phpunit --configuration phpunit.xml --log-junit "${RUNNER_TEMP}/phpunit-junit.xml"
+          php artisan test --compact --coverage --min=80 --log-junit "${RUNNER_TEMP}/phpunit-junit.xml"
           test_exit=$?
           set -e
           if [ -f "${RUNNER_TEMP}/phpunit-junit.xml" ]; then
