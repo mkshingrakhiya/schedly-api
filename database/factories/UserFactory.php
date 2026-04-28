@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Enums\RoleSlug;
+use App\Enums\Role as RoleSlug;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;

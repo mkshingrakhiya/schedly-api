@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Models;
 
-use App\Enums\RoleSlug;
+use App\Enums\Role as RoleSlug;
 use App\Models\Role;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Tests\TestCase;

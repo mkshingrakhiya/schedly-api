@@ -4,7 +4,7 @@ namespace App\Domain\Auth\Services;
 
 use App\Domain\Auth\DTOs\LoginUserDataDTO;
 use App\Domain\Auth\DTOs\RegisterUserDataDTO;
-use App\Enums\RoleSlug;
+use App\Enums\Role as RoleSlug;
 use App\Enums\WorkspaceMemberRole;
 use App\Models\Role;
 use App\Models\User;
