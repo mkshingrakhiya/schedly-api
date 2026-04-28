@@ -4,16 +4,21 @@ namespace App\Services\SocialPlatforms;
 
 use App\Services\SocialPlatforms\Contracts\SocialPlatformDriver;
 use App\Services\SocialPlatforms\Drivers\FacebookDriver;
+use App\Services\SocialPlatforms\Drivers\InstagramDriver;
 use InvalidArgumentException;
 
 class SocialPlatformManager
 {
-    public function __construct(private FacebookDriver $facebookDriver) {}
+    public function __construct(
+        private FacebookDriver $facebookDriver,
+        private InstagramDriver $instagramDriver,
+    ) {}
 
     public function driver(string $platformSlug): SocialPlatformDriver
     {
         return match ($platformSlug) {
             'facebook' => $this->facebookDriver,
+            'instagram' => $this->instagramDriver,
             default => throw new InvalidArgumentException("Unsupported social platform driver [$platformSlug]."),
         };
     }

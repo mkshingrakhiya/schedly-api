@@ -11,8 +11,9 @@ use App\Models\User;
 use App\Models\Workspace;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Validation\ValidationException;
+use InvalidArgumentException;
 
-class FacebookOAuthService
+class PlatformOAuthService
 {
     public function __construct(
         private SocialPlatformManager $socialPlatformManager,
@@ -22,9 +23,9 @@ class FacebookOAuthService
     /**
      * @return array{authorizationUrl: string, expiresAt: string}
      */
-    public function buildConnectionPayload(Workspace $workspace, User $user): array
+    public function buildConnectionPayload(Workspace $workspace, User $user, string $platformSlug): array
     {
-        $platform = Platform::findBySlug('facebook');
+        $platform = $this->resolvePlatform($platformSlug);
 
         $state = PlatformOAuthConnectionState::query()->create([
             'workspace_id' => $workspace->id,
@@ -35,7 +36,7 @@ class FacebookOAuthService
         ]);
 
         $authorizationUrl = $this->socialPlatformManager
-            ->driver('facebook')
+            ->driver($platformSlug)
             ->buildAuthorizationUrl($state->uuid);
 
         return [
@@ -47,7 +48,7 @@ class FacebookOAuthService
     /**
      * @return list<array{platform_slug: string, platform_account_id: string, handle: string}>
      */
-    public function handleCallback(string $stateUuid, string $authorizationCode): array
+    public function handleCallback(string $stateUuid, string $authorizationCode, string $platformSlug): array
     {
         $state = PlatformOAuthConnectionState::findByUuid($stateUuid);
 
@@ -72,9 +73,9 @@ class FacebookOAuthService
 
         $state->delete();
 
-        $platform = Platform::findBySlug('facebook');
+        $platform = $this->resolvePlatform($platformSlug);
 
-        $driver = $this->socialPlatformManager->driver('facebook');
+        $driver = $this->socialPlatformManager->driver($platformSlug);
         $callbackPayload = $driver->handleCallback($authorizationCode);
 
         PlatformOAuthConnection::query()->updateOrCreate(
@@ -99,35 +100,37 @@ class FacebookOAuthService
      * @param  list<array{platform_account_id: string, handle?: string|null}>  $selectedChannels
      * @return Collection<int, Channel>
      */
-    public function storeSelectedChannels(Workspace $workspace, User $user, array $selectedChannels): Collection
+    public function storeSelectedChannels(Workspace $workspace, User $user, array $selectedChannels, string $platformSlug): Collection
     {
-        $facebookPlatform = Platform::findBySlug('facebook');
+        $platform = $this->resolvePlatform($platformSlug);
 
         $connection = PlatformOAuthConnection::query()
             ->where('workspace_id', $workspace->id)
-            ->where('platform_id', $facebookPlatform->id)
+            ->where('platform_id', $platform->id)
             ->latest('id')
             ->first();
 
         if ($connection === null) {
             throw ValidationException::withMessages([
-                'channels' => ['No Facebook OAuth connection found for this workspace.'],
+                'channels' => ["No {$platform->name} OAuth connection found for this workspace."],
             ]);
         }
 
-        $discoverableChannels = collect(
-            $this->socialPlatformManager->driver('facebook')->discoverChannels($connection->access_token),
-        )->keyBy(fn (array $channel): string => $this->candidateKey($channel['platform_slug'], $channel['platform_account_id']));
+        $channels = $this->socialPlatformManager->driver($platformSlug)->discoverChannels($connection->access_token);
+
+        $discoverableChannels = collect($channels)->keyBy(
+            fn (array $channel): string => $this->candidateKey($channel['platform_slug'], $channel['platform_account_id'])
+        );
 
         $createdChannels = new Collection;
 
         foreach ($selectedChannels as $index => $selection) {
-            $selectionKey = $this->candidateKey('facebook', $selection['platform_account_id']);
+            $selectionKey = $this->candidateKey($platformSlug, $selection['platform_account_id']);
             $candidate = $discoverableChannels->get($selectionKey);
 
             if (! is_array($candidate)) {
                 throw ValidationException::withMessages([
-                    "channels.$index.platform_account_id" => ['Channel is not available for the current Facebook connection.'],
+                    "channels.$index.platform_account_id" => ["Channel is not available for the current {$platform->name} connection."],
                 ]);
             }
 
@@ -138,7 +141,7 @@ class FacebookOAuthService
 
             $existing = Channel::query()
                 ->where('workspace_id', $workspace->id)
-                ->where('platform_id', $facebookPlatform->id)
+                ->where('platform_id', $platform->id)
                 ->where('platform_account_id', $selection['platform_account_id'])
                 ->first();
 
@@ -153,7 +156,7 @@ class FacebookOAuthService
 
             $createdChannels->push(
                 $this->channelService->create($workspace, $user, [
-                    'platform_id' => $facebookPlatform->id,
+                    'platform_id' => $platform->id,
                     'handle' => $handle,
                     'platform_account_id' => $selection['platform_account_id'],
                     'access_token' => $accessToken,
@@ -164,6 +167,17 @@ class FacebookOAuthService
         }
 
         return $createdChannels->load('platform');
+    }
+
+    private function resolvePlatform(string $platformSlug): Platform
+    {
+        $platform = Platform::findBySlug($platformSlug);
+
+        if ($platform === null) {
+            throw new InvalidArgumentException("Unknown platform slug [{$platformSlug}].");
+        }
+
+        return $platform;
     }
 
     private function candidateKey(string $platformSlug, string $platformAccountId): string

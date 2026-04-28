@@ -3,8 +3,9 @@
 namespace App\Domain\Content\Http\Requests;
 
 use App\Http\Requests\Api\V1FormRequest;
+use InvalidArgumentException;
 
-class ConnectFacebookChannelsRequest extends V1FormRequest
+class SocialPlatformConnectChannelsRequest extends V1FormRequest
 {
     public function authorize(): bool
     {
@@ -18,7 +19,7 @@ class ConnectFacebookChannelsRequest extends V1FormRequest
     {
         return [
             'channels' => ['required', 'array', 'min:1'],
-            'channels.*.platform_slug' => ['required', 'string', 'in:facebook'],
+            'channels.*.platform_slug' => ['required', 'string', 'in:'.$this->platformSlug()],
             'channels.*.platform_account_id' => ['required', 'string', 'max:255'],
             'channels.*.handle' => ['sometimes', 'nullable', 'string', 'max:255'],
         ];
@@ -33,5 +34,16 @@ class ConnectFacebookChannelsRequest extends V1FormRequest
         $validated = $this->validated();
 
         return $validated['channels'];
+    }
+
+    protected function platformSlug(): string
+    {
+        $platform = $this->route('platform');
+
+        if (! is_string($platform) || $platform === '') {
+            throw new InvalidArgumentException('Missing social platform route parameter.');
+        }
+
+        return $platform;
     }
 }
