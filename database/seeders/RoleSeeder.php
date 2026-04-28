@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Enums\RoleSlug;
+use App\Enums\Role as RoleSlug;
 use App\Models\Role;
 use Illuminate\Database\Seeder;
 
