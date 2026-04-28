@@ -4,7 +4,7 @@ namespace App\Domain\Content\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class SocialFacebookCallbackRequest extends FormRequest
+class SocialPlatformCallbackRequest extends FormRequest
 {
     /**
      * @return array<string, array<int, mixed>>

@@ -7,6 +7,7 @@ use App\Models\Workspace;
 use App\Policies\PostPolicy;
 use App\Policies\WorkspacePolicy;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -26,5 +27,11 @@ class AppServiceProvider extends ServiceProvider
     {
         Gate::policy(Workspace::class, WorkspacePolicy::class);
         Gate::policy(Post::class, PostPolicy::class);
+
+        Route::macro('enum', function (string $enum, callable $callback) {
+            foreach ($enum::cases() as $case) {
+                $callback($case);
+            }
+        });
     }
 }
