@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Domain\Content\Enums\PostStatus;
+use App\Domain\Content\Enums\PostType;
 use App\Domain\Content\Models\Post;
 use App\Models\User;
 use App\Models\Workspace;
@@ -24,6 +25,7 @@ class PostFactory extends Factory
             'workspace_id' => Workspace::factory(),
             'created_by' => User::factory(),
             'content' => fake()->paragraph(),
+            'type' => PostType::Default,
             'status' => PostStatus::Scheduled,
         ];
     }

@@ -129,9 +129,18 @@ class InstagramSocialControllerTest extends TestCase
         Sanctum::actingAs($owner);
         Http::fake(function (Request $request) {
             $url = $request->url();
+            $data = $request->data();
 
             if (str_contains($url, 'api.instagram.com/oauth/access_token')) {
-                return Http::response(['access_token' => 'ig-token', 'user_id' => 'ig-user-1'], 200);
+                return Http::response(['access_token' => 'ig-short-token', 'user_id' => 'ig-user-1'], 200);
+            }
+
+            if (str_contains($url, 'graph.instagram.com/access_token') && ($data['grant_type'] ?? null) === 'ig_exchange_token') {
+                return Http::response([
+                    'access_token' => 'ig-long-token',
+                    'token_type' => 'bearer',
+                    'expires_in' => 5183944,
+                ], 200);
             }
 
             if (str_contains($url, 'graph.instagram.com/me')) {
@@ -162,8 +171,9 @@ class InstagramSocialControllerTest extends TestCase
             ->firstOrFail();
 
         $this->assertSame('ig-user-1', $connection->provider_user_id);
-        $this->assertSame('ig-token', $connection->access_token);
-        $this->assertNotSame('ig-token', (string) $connection->getRawOriginal('access_token'));
+        $this->assertSame('ig-long-token', $connection->access_token);
+        $this->assertNotSame('ig-long-token', (string) $connection->getRawOriginal('access_token'));
+        $this->assertNotNull($connection->expires_at);
         $this->assertDatabaseMissing('platform_oauth_connection_states', ['id' => $state->id]);
     }
 

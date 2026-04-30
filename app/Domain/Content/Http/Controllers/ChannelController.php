@@ -25,6 +25,7 @@ class ChannelController
         return ChannelResource::collection($channels)->response();
     }
 
+    // TODO: Review this controller action
     public function connect(ConnectChannelRequest $request): JsonResponse
     {
         $channel = $this->channelService->create(
@@ -36,6 +37,7 @@ class ChannelController
         return ChannelResource::make($channel->load('platform'))->response()->setStatusCode(201);
     }
 
+    // TODO: Review this controller action
     public function disconnect(DisconnectChannelRequest $request, Channel $channel): Response
     {
         $this->channelService->delete($request->workspace(), $channel);

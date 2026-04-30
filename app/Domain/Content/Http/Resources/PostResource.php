@@ -19,6 +19,7 @@ class PostResource extends JsonResource
         return [
             'uuid' => $this->uuid,
             'content' => $this->content,
+            'type' => $this->type->value,
             'targets' => PostTargetResource::collection($this->whenLoaded('targets')),
             'media' => PostMediaResource::collection($this->whenLoaded('media')),
             'status' => $this->status->value,

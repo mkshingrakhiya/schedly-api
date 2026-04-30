@@ -6,6 +6,7 @@ use App\Models\Concerns\HasUuid;
 use App\Models\User;
 use App\Models\Workspace;
 use Database\Factories\PostMediaFactory;
+use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -26,15 +27,10 @@ use Illuminate\Support\Facades\Storage;
  * @property Workspace $workspace
  * @property User $owner
  */
+#[UseFactory(PostMediaFactory::class)]
 class PostMedia extends Model
 {
-    /** @use HasFactory<PostMediaFactory> */
     use HasFactory, HasUuid;
-
-    protected static function newFactory(): PostMediaFactory
-    {
-        return PostMediaFactory::new();
-    }
 
     /**
      * @var string

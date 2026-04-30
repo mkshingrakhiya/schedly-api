@@ -15,13 +15,15 @@ return new class extends Migration
             $table->foreignId('channel_id')->constrained()->cascadeOnUpdate()->restrictOnDelete();
             $table->string('status');
             $table->timestamp('scheduled_at');
-            $table->timestamp('published_at')->nullable();
             $table->json('platform_options')->nullable();
+            $table->timestamp('published_at')->nullable();
+            $table->string('external_post_id')->nullable();
+            $table->unsignedInteger('attempt_count')->default(0);
+            $table->timestamp('last_attempt_at')->nullable();
             $table->timestamps();
 
-            $table->index('post_id');
-            $table->index('channel_id');
             $table->unique(['channel_id', 'post_id']);
+            $table->index('post_id');
         });
     }
 

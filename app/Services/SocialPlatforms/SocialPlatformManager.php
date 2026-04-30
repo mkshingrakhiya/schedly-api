@@ -2,6 +2,7 @@
 
 namespace App\Services\SocialPlatforms;
 
+use App\Enums\Platform;
 use App\Services\SocialPlatforms\Contracts\SocialPlatformDriver;
 use App\Services\SocialPlatforms\Drivers\FacebookDriver;
 use App\Services\SocialPlatforms\Drivers\InstagramDriver;
@@ -17,8 +18,8 @@ class SocialPlatformManager
     public function driver(string $platformSlug): SocialPlatformDriver
     {
         return match ($platformSlug) {
-            'facebook' => $this->facebookDriver,
-            'instagram' => $this->instagramDriver,
+            Platform::FACEBOOK->value => $this->facebookDriver,
+            Platform::INSTAGRAM->value => $this->instagramDriver,
             default => throw new InvalidArgumentException("Unsupported social platform driver [$platformSlug]."),
         };
     }

@@ -26,6 +26,9 @@ class PostTargetFactory extends Factory
             'status' => PostTargetStatus::Pending,
             'scheduled_at' => fake()->dateTimeBetween('now', '+1 month'),
             'published_at' => null,
+            'external_post_id' => null,
+            'attempt_count' => 0,
+            'last_attempt_at' => null,
             'platform_options' => null,
         ];
     }

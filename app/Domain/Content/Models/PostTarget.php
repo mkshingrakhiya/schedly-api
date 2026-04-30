@@ -5,9 +5,11 @@ namespace App\Domain\Content\Models;
 use App\Domain\Content\Enums\PostTargetStatus;
 use App\Models\Concerns\HasUuid;
 use Database\Factories\PostTargetFactory;
+use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -18,11 +20,17 @@ use Illuminate\Support\Carbon;
  * @property PostTargetStatus $status
  * @property Carbon $scheduled_at
  * @property Carbon|null $published_at
+ * @property ?string $external_post_id
+ * @property int $attempt_count
+ * @property ?Carbon $last_attempt_at
  * @property array<string, mixed>|null $platform_options
+ * @property-read Post $post
+ * @property-read Channel $channel
+ * @property-read PostTargetPublishAttempt[] $publishAttempts
  */
+#[UseFactory(PostTargetFactory::class)]
 class PostTarget extends Model
 {
-    /** @use HasFactory<PostTargetFactory> */
     use HasFactory, HasUuid;
 
     /**
@@ -34,6 +42,9 @@ class PostTarget extends Model
         'status',
         'scheduled_at',
         'published_at',
+        'external_post_id',
+        'attempt_count',
+        'last_attempt_at',
         'platform_options',
     ];
 
@@ -46,13 +57,9 @@ class PostTarget extends Model
             'status' => PostTargetStatus::class,
             'scheduled_at' => 'datetime',
             'published_at' => 'datetime',
+            'last_attempt_at' => 'datetime',
             'platform_options' => 'array',
         ];
-    }
-
-    protected static function newFactory(): PostTargetFactory
-    {
-        return PostTargetFactory::new();
     }
 
     /**
@@ -69,5 +76,13 @@ class PostTarget extends Model
     public function channel(): BelongsTo
     {
         return $this->belongsTo(Channel::class);
+    }
+
+    /**
+     * @return HasMany<PostTargetPublishAttempt, $this>
+     */
+    public function publishAttempts(): HasMany
+    {
+        return $this->hasMany(PostTargetPublishAttempt::class)->orderByDesc('attempt_number');
     }
 }
