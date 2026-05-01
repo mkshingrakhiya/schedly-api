@@ -1,6 +1,6 @@
-# Schedly API
+# PresenceHub API
 
-Backend API for **Schedly**—schedule and publish content across your connected channels. Clients authenticate, link platforms and channels, and manage posts and media through a versioned JSON API.
+Backend API for **PresenceHub**—schedule and publish content across your connected channels. Clients authenticate, link platforms and channels, and manage posts and media through a versioned JSON API.
 
 ## Tech stack
 

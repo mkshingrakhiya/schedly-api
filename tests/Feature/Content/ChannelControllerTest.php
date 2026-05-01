@@ -185,7 +185,7 @@ class ChannelControllerTest extends TestCase
     {
         return array_merge([
             'platform_slug' => 'instagram',
-            'handle' => 'schedly_test',
+            'handle' => 'presencehub_test',
             'platform_account_id' => '123456789',
             'access_token' => 'test-access-token-secret',
             'refresh_token' => null,
