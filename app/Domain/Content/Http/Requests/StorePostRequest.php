@@ -3,6 +3,7 @@
 namespace App\Domain\Content\Http\Requests;
 
 use App\Domain\Content\Enums\PostStatus;
+use App\Domain\Content\Enums\PostType;
 use App\Http\Requests\Api\V1FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -22,6 +23,7 @@ class StorePostRequest extends V1FormRequest
 
         return [
             'content' => ['required', 'string'],
+            'type' => ['sometimes', Rule::enum(PostType::class)],
             'status' => ['nullable', Rule::enum(PostStatus::class)],
             'targets' => ['sometimes', 'array'],
             'targets.*.channel_uuid' => [
@@ -53,6 +55,7 @@ class StorePostRequest extends V1FormRequest
 
         $payload = [
             'content' => $validated['content'],
+            'type' => $validated['type'] ?? PostType::Default,
             'status' => $validated['status'] ?? null,
             'targets' => $validated['targets'] ?? [],
         ];

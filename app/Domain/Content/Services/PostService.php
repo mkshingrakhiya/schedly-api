@@ -4,9 +4,11 @@ namespace App\Domain\Content\Services;
 
 use App\Domain\Content\Enums\PostStatus;
 use App\Domain\Content\Enums\PostTargetStatus;
+use App\Domain\Content\Enums\PostType;
 use App\Domain\Content\Models\Channel;
 use App\Domain\Content\Models\Post;
 use App\Domain\Content\Models\PostTarget;
+use App\Jobs\PublishPostTargetJob;
 use App\Models\User;
 use App\Models\Workspace;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -37,6 +39,7 @@ class PostService
                 'workspace_id' => $workspace->id,
                 'created_by' => $creator->id,
                 'content' => $attributes['content'],
+                'type' => $attributes['type'] ?? PostType::Default,
                 'status' => $attributes['status'] ?? PostStatus::Scheduled,
             ]);
 
@@ -69,6 +72,10 @@ class PostService
         return DB::transaction(function () use ($post, $workspace, $attributes): Post {
             if (array_key_exists('content', $attributes)) {
                 $post->content = $attributes['content'];
+            }
+
+            if (array_key_exists('type', $attributes)) {
+                $post->type = $attributes['type'];
             }
 
             if (array_key_exists('status', $attributes)) {
@@ -131,13 +138,15 @@ class PostService
                 ]);
             }
 
-            PostTarget::query()->create([
+            $createdTarget = PostTarget::query()->create([
                 'post_id' => $post->id,
                 'channel_id' => $channel->id,
                 'status' => PostTargetStatus::Pending,
                 'scheduled_at' => $scheduledAt,
                 'platform_options' => Arr::get($target, 'platform_options'),
             ]);
+
+            PublishPostTargetJob::dispatch($createdTarget->id)->afterCommit();
         }
     }
 }

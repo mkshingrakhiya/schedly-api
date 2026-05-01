@@ -3,6 +3,7 @@
 namespace App\Domain\Content\Http\Requests;
 
 use App\Domain\Content\Enums\PostStatus;
+use App\Domain\Content\Enums\PostType;
 use App\Domain\Content\Models\Post;
 use App\Http\Requests\Api\V1FormRequest;
 use Illuminate\Validation\Rule;
@@ -32,6 +33,7 @@ class UpdatePostRequest extends V1FormRequest
 
         return [
             'content' => ['sometimes', 'string'],
+            'type' => ['sometimes', Rule::enum(PostType::class)],
             'status' => ['sometimes', Rule::enum(PostStatus::class)],
             'targets' => ['sometimes', 'array'],
             'targets.*.channel_uuid' => [

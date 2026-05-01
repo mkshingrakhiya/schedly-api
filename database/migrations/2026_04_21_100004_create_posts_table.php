@@ -14,6 +14,7 @@ return new class extends Migration
             $table->foreignId('workspace_id')->constrained()->cascadeOnUpdate()->cascadeOnDelete();
             $table->foreignId('created_by')->constrained('users')->cascadeOnUpdate()->restrictOnDelete();
             $table->text('content');
+            $table->string('type')->default('default');
             $table->string('status');
             $table->timestamps();
             $table->softDeletes();

@@ -2,6 +2,7 @@
 
 namespace App\Services\SocialPlatforms\Drivers;
 
+use App\Enums\Platform;
 use App\Services\SocialPlatforms\Contracts\SocialPlatformDriver;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Client\PendingRequest;
@@ -96,7 +97,7 @@ class FacebookDriver implements SocialPlatformDriver
             $pageAccessToken = $this->stringValue($page, 'access_token', required: false) ?? '';
 
             $normalizedChannels[] = [
-                'platform_slug' => 'facebook',
+                'platform_slug' => Platform::FACEBOOK->value,
                 'platform_account_id' => $pageId,
                 'handle' => $pageName,
                 'access_token' => $pageAccessToken === '' ? null : $pageAccessToken,
