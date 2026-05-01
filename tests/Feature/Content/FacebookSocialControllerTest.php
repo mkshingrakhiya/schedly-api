@@ -145,7 +145,7 @@ class FacebookSocialControllerTest extends TestCase
                     'data' => [
                         [
                             'id' => 'page-1',
-                            'name' => 'Schedly Cafe',
+                            'name' => 'PresenceHub Cafe',
                             'access_token' => 'page-token-1',
                         ],
                     ],
@@ -276,7 +276,7 @@ class FacebookSocialControllerTest extends TestCase
                     'data' => [
                         [
                             'id' => 'page-1',
-                            'name' => 'Schedly Cafe',
+                            'name' => 'PresenceHub Cafe',
                             'access_token' => 'page-token-1',
                         ],
                     ],
@@ -295,7 +295,7 @@ class FacebookSocialControllerTest extends TestCase
                 [
                     'platform_slug' => 'facebook',
                     'platform_account_id' => 'page-1',
-                    'handle' => 'Schedly Cafe',
+                    'handle' => 'PresenceHub Cafe',
                 ],
             ],
         ];
@@ -310,7 +310,7 @@ class FacebookSocialControllerTest extends TestCase
             'workspace_id' => $workspace->id,
             'platform_id' => $facebookPlatform->id,
             'platform_account_id' => 'page-1',
-            'handle' => 'Schedly Cafe',
+            'handle' => 'PresenceHub Cafe',
         ]);
     }
 

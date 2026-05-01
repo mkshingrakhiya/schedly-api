@@ -18,10 +18,10 @@ On Linux, follow [mkcert’s install instructions](https://github.com/FiloSottil
 
 ## 1. Map local hostnames
 
-The stack expects `schedly.test` and `schedly.local` (see [`docker/nginx.conf`](../docker/nginx.conf)). Add them to your hosts file:
+The stack expects `presencehub.test` and `presencehub.local` (see [`docker/nginx.conf`](../docker/nginx.conf)). Add them to your hosts file:
 
 - **macOS / Linux:** edit `/etc/hosts` and add:
-  - `127.0.0.1 schedly.test schedly.local`
+  - `127.0.0.1 presencehub.test presencehub.local`
 - **Windows:** edit `C:\Windows\System32\drivers\etc\hosts` the same way (may need an elevated editor).
 
 ## 2. Create TLS files (do not commit keys)
@@ -29,15 +29,15 @@ The stack expects `schedly.test` and `schedly.local` (see [`docker/nginx.conf`](
 Nginx is configured to load fixed paths under `docker/ssl/`. **Generate a certificate and key on your machine** and use these exact output names so you do not have to edit Nginx:
 
 ```bash
-cd /path/to/schedly-api
+cd /path/to/Presence-Hub-API
 mkdir -p docker/ssl
 
-mkcert -cert-file docker/ssl/schedly.test+3.pem -key-file docker/ssl/schedly.test+3-key.pem schedly.test schedly.local
+mkcert -cert-file docker/ssl/presencehub.test+3.pem -key-file docker/ssl/presencehub.test+3-key.pem presencehub.test presencehub.local
 ```
 
 - The `+3` in the filenames is only a label; what matters is that the paths match [`docker/nginx.conf`](../docker/nginx.conf).
 - These files are **gitignored**; each developer creates their own pair.
-- If you used mkcert, your system trusts the mkcert root CA, so `https://schedly.test` should work without a browser warning.
+- If you used mkcert, your system trusts the mkcert root CA, so `https://presencehub.test` should work without a browser warning.
 
 **If the `nginx` container fails to start** with an error about missing certificate files, confirm both files exist under `docker/ssl/` and match the `ssl_certificate` and `ssl_certificate_key` lines in `docker/nginx.conf`.
 
@@ -49,7 +49,7 @@ cp .env.example .env
 
 Edit `.env` as needed, at minimum for HTTPS behind the proxy:
 
-- `APP_URL=https://schedly.test` (or `https://schedly.local` if you prefer; keep it consistent with the URL you use in the browser)
+- `APP_URL=https://presencehub.test` (or `https://presencehub.local` if you prefer; keep it consistent with the URL you use in the browser)
 
 The `api` service in [`docker-compose.yml`](../docker-compose.yml) sets `DB_*` for PostgreSQL inside the Compose network (`DB_HOST=postgres`, etc.), so the app in Docker uses Postgres regardless of the `DB_CONNECTION=sqlite` default in `.env.example`. For running Artisan **on the host** (without Compose) you would need to set `DB_CONNECTION=pgsql` and point `DB_HOST` to `127.0.0.1` and `DB_PORT` to the published port (default `5432` unless you set `POSTGRES_PORT` in `.env`).
 
@@ -128,12 +128,12 @@ docker compose ps
 docker compose exec nginx nginx -t
 ```
 
-- Open `http://schedly.test` in a browser: you should be redirected to HTTPS.
-- Open `https://schedly.test` (or `https://schedly.local`): the Laravel app should respond.
+- Open `http://presencehub.test` in a browser: you should be redirected to HTTPS.
+- Open `https://presencehub.test` (or `https://presencehub.local`): the Laravel app should respond.
 - `curl` example (ignores cert validation for a quick test):
 
   ```bash
-  curl -skI https://schedly.test/
+  curl -skI https://presencehub.test/
   ```
 
 ## 8. Optional: if private keys were ever committed
@@ -150,7 +150,7 @@ Regenerate local certs (step 2) and commit only the updated `.gitignore` and thi
 
 - **`nginx` container exits** — Often missing or misnamed `docker/ssl` files, or `nginx -t` errors. Check logs: `docker compose logs nginx`.
 - **Database connection errors** — Confirm `postgres` is healthy: `docker compose ps`. Ensure the `api` service uses the Compose `environment` (see `docker-compose.yml`).
-- **“Wrong host” or 404 from Laravel** — Set `APP_URL` to the hostname you use (`https://schedly.test`).
+- **“Wrong host” or 404 from Laravel** — Set `APP_URL` to the hostname you use (`https://presencehub.test`).
 
 ## Tests (host PHP)
 

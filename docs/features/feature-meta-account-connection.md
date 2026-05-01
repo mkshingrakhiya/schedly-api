@@ -6,7 +6,7 @@
 
 ## Objective
 
-Allow a workspace member to connect a Meta account, discover Facebook Pages and linked Instagram Business accounts, and save selected accounts as Schedly channels.
+Allow a workspace member to connect a Meta account, discover Facebook Pages and linked Instagram Business accounts, and save selected accounts as PresenceHub channels.
 
 This feature uses:
 
